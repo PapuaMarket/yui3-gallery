@@ -1322,7 +1322,7 @@ Y.Accordion = Y.Base.create( AccName, Y.Widget, [], {
          */
         contentBox.set( "id", srcNodeId );
 
-        itemsDom = srcNode.queryAll( "> ." + C_ITEM );
+        itemsDom = srcNode.all( "> ." + C_ITEM );
 
         itemsDom.each( function( itemNode, index, itemsDom ){
             var newItem;
@@ -2330,7 +2330,7 @@ Y.AccordionItem = Y.Base.create( AccItemName, Y.Widget, [Y.WidgetStdMod], {
      * @protected
      */
     _setIcon: function( value ){
-        return Y.get( value ) || null;
+        return Y.one( value ) || null;
     },
 
 
@@ -2344,7 +2344,7 @@ Y.AccordionItem = Y.Base.create( AccItemName, Y.Widget, [Y.WidgetStdMod], {
      * @protected
      */
     _setNodeLabel: function( value ){
-        return Y.get( value ) || null;
+        return Y.one( value ) || null;
     },
 
 
@@ -2358,7 +2358,7 @@ Y.AccordionItem = Y.Base.create( AccItemName, Y.Widget, [Y.WidgetStdMod], {
      * @protected
      */
     _setIconsContainer: function( value ){
-        return Y.get( value ) || null;
+        return Y.one( value ) || null;
     },
 
 
@@ -2372,7 +2372,7 @@ Y.AccordionItem = Y.Base.create( AccItemName, Y.Widget, [Y.WidgetStdMod], {
      * @protected
      */
     _setIconExpanded: function( value ){
-        return Y.get( value ) || null;
+        return Y.one( value ) || null;
     },
 
 
@@ -2386,7 +2386,7 @@ Y.AccordionItem = Y.Base.create( AccItemName, Y.Widget, [Y.WidgetStdMod], {
      * @protected
      */
     _setIconAlwaysVisible: function( value ){
-        return Y.get( value ) || null;
+        return Y.one( value ) || null;
     },
 
 
@@ -2400,7 +2400,7 @@ Y.AccordionItem = Y.Base.create( AccItemName, Y.Widget, [Y.WidgetStdMod], {
      * @protected
      */
     _setIconClose: function( value ){
-        return Y.get( value ) || null;
+        return Y.one( value ) || null;
     },
 
 
@@ -2718,7 +2718,7 @@ Y.AccordionItem = Y.Base.create( AccItemName, Y.Widget, [Y.WidgetStdMod], {
             }
 
             labelSelector = HEADER_SELECTOR_SUB + C_LABEL;
-            node = srcNode.query( labelSelector );
+            node = srcNode.one( labelSelector );
 
             return (node) ? node.get( INNER_HTML ) : null;
         },
@@ -2890,4 +2890,4 @@ Y.AccordionItem = Y.Base.create( AccItemName, Y.Widget, [Y.WidgetStdMod], {
 
 
 
-}, 'gallery-2010.06.09-20-45' ,{optional:['dd-constrain', 'dd-proxy', 'dd-drop'], requires:['event', 'anim-easing', 'widget', 'widget-stdmod', 'json-parse']});
+}, 'gallery-2011.01.03-18-30' ,{optional:['dd-constrain', 'dd-proxy', 'dd-drop'], requires:['event', 'anim-easing', 'widget', 'widget-stdmod', 'json-parse']});
