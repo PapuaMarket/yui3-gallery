@@ -1,0 +1,10 @@
+Widget View
+    Provides View support for Widgets through an extension:
+    This Widget extension adds a default content for the widget (innerHTML for contentBox), 
+    and on top of that, supports binding regular attributes to specific node into the view to 
+    facilitate the use of different views for a particular widget.
+    More info at http://yuilibrary.com/gallery/show/widget-view
+
+HEAD
+    * Tested on YUI 3.3.0
+    * Initial release
