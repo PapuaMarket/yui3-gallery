@@ -84,18 +84,35 @@
                         <dd class="yui3-accordion-item-bd" id="bd6">content here...content here...content here...content here...</dd>
                     </dl>
 
+                    <h3>Accordion #4</h3>
+                    <table id="myaccordion4">
+                        <tbody>
+                            <tr class="yui3-accordion-item yui3-accordion-item-active"><td class="yui3-accordion-item-trigger">option 1</a></td></tr>
+                            <tr class="yui3-accordion-item-bd" id="bd7" style="height: auto;"><td>content here...content here...content here...content here...</td></tr>
+                            <tr class="yui3-accordion-item"><td class="yui3-accordion-item-trigger">option 2</td></tr>
+                            <tr class="yui3-accordion-item-bd" id="bd8"><td>content here...content here...content here...content here...</td></tr>
+                        </tbody>
+                    </table>
+
                 </div>
             </div>
 
         </div>
 
-<script type="text/javascript" src="../../../build/gallery-node-accordion/gallery-node-accordion-debug.js"></script>
-<link type="text/css" rel="stylesheet" href="../../../build/gallery-node-accordion/assets/gallery-node-accordion-core.css" />
 <!-- Initialization process //-->
 <script type="text/javascript">
 YUI({
-        useConsoleOutput: true,
-        logInclude: { TestRunner: true }
+    useConsoleOutput: true,
+    logInclude: { TestRunner: true },
+    groups: {
+        gallery: {
+            combine: false,
+            base: '../../../build/',
+            patterns: {
+                'gallery-': {}
+            }
+        }
+    }
 }).use('test', 'console', 'anim', 'event-simulate', 'gallery-node-accordion', function (Y) {
 
       // creating the console...
@@ -132,8 +149,8 @@ YUI({
             test_collapsing_all: function(){
                 
                 a1.collapseAllItems();
-                Y.Assert.areEqual(parseInt(bd1.getStyle('height')), 0, "accordion collapse all items fails [first item]");
-                Y.Assert.areEqual(parseInt(bd1.getStyle('height')), 0, "accordion collapse all items fails [second item]");
+                Y.Assert.areEqual(0, parseInt(bd1.getStyle('height')), "accordion collapse all items fails [first item]");
+                Y.Assert.areEqual(0, parseInt(bd1.getStyle('height')), "accordion collapse all items fails [second item]");
                 
             },
             test_expanding_second_item: function(){
@@ -151,7 +168,7 @@ YUI({
             test_collapse_first_item: function(){
                 
                 a1.collapseItem(0);
-                Y.Assert.areEqual(parseInt(bd1.getStyle('height')), 0, "failing handling the first item");
+                Y.Assert.areEqual(0, parseInt(bd1.getStyle('height')), "failing handling the first item");
                 
             }
             
@@ -204,8 +221,8 @@ YUI({
             test_collapsing_all: function(){
 
                 a3.collapseAllItems();
-                Y.Assert.areEqual(parseInt(bd5.getStyle('height')), 0, "accordion collapse all items fails [first item]");
-                Y.Assert.areEqual(parseInt(bd5.getStyle('height')), 0, "accordion collapse all items fails [second item]");
+                Y.Assert.areEqual(0, parseInt(bd5.getStyle('height')), "accordion collapse all items fails [first item]");
+                Y.Assert.areEqual(0, parseInt(bd6.getStyle('height')), "accordion collapse all items fails [second item]");
 
             },
             test_expanding_second_item: function(){
@@ -223,11 +240,61 @@ YUI({
             test_collapse_first_item: function(){
 
                 a3.collapseItem(0);
-                Y.Assert.areEqual(parseInt(bd5.getStyle('height')), 0, "failing handling the first item");
+                Y.Assert.areEqual(0, parseInt(bd5.getStyle('height')), "failing handling the first item");
 
             }
             
         })); 
+
+        // accordion 4
+        var node4 = Y.one("#myaccordion4").plug(Y.Plugin.NodeAccordion, {
+            triggerSelector: 'tr.yui3-accordion-item td.yui3-accordion-item-trigger',
+            itemSelector: 'tr.yui3-accordion-item',
+            itemBodySelector: 'tr.yui3-accordion-item-bd'
+        });
+        var a4 = node4.accordion;
+        var bd7 = Y.one('#bd7');
+        var bd8 = Y.one('#bd8');
+        
+        // starting the testing process
+        
+        // add the test cases and suites 
+        Y.Test.Runner.add(new Y.Test.Case({
+            
+            name: "Node Accordion 4 Tests",
+            
+            test_init: function(){
+                
+                Y.Assert.isObject(a4, "accordion plug with custom arguments fails...");
+            
+            },
+            test_collapsing_all: function(){
+
+                a4.collapseAllItems();
+                Y.Assert.areEqual(0, parseInt(bd7.getStyle('height')), "accordion collapse all items fails [first item]");
+                Y.Assert.areEqual(0, parseInt(bd8.getStyle('height')), "accordion collapse all items fails [second item]");
+
+            },
+            test_expanding_second_item: function(){
+
+                a4.expandItem(1);
+                Y.Assert.isTrue((parseInt(bd8.getStyle('height')) > 10), "failing handling the second item");
+
+            },
+            test_toggle_first_item: function(){
+
+                a4.toggleItem(0);
+                Y.Assert.isTrue((parseInt(bd7.getStyle('height')) > 10), "failing handling the first item");
+
+            },
+            test_collapse_first_item: function(){
+
+                a4.collapseItem(0);
+                Y.Assert.areEqual(0, parseInt(bd7.getStyle('height')), "failing handling the first item");
+
+            }
+
+        }));
 
         //run all tests 
         Y.Test.Runner.run();
