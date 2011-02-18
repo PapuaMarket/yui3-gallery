@@ -6,7 +6,12 @@ Node Accordion Plugin
     More info at http://yuilibrary.com/gallery/show/node-accordion
 
 HEAD
-    * Tested on YUI 3.2.0
+    * Adding minHeight and minWidth attributes to allow redefining the target size for bd.
+    * Making the accordion skinnable (it will try to load SAM skin by default).
+    * Adding triggerSelector, itemSelector and itemBodySelector attributes to facilitate
+      the manipulation of the selectors for the item, trigger and body elements. Useful if 
+      you plan to have a custom markup (like a table).
+    * Tested on YUI 3.8.0
 
 2010.05.21-18-16
     * Tested on YUI 3.1.2
