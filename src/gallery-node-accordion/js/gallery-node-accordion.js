@@ -81,8 +81,7 @@
 
 //  Util shortcuts
 
-var UA = Y.UA,
-    getClassName = Y.ClassNameManager.getClassName,
+var getClassName = Y.ClassNameManager.getClassName,
     anims = {},
     WHEELS = {fast:0.1,slow:0.6,normal:0.4},
 
@@ -94,7 +93,6 @@ var UA = Y.UA,
     WIDTH = "width",
     HEIGHT = "height",
     PX = "px",
-    PERIOD = ".",
     HOST = "host",
 
     //  Attribute keys
@@ -105,7 +103,10 @@ var UA = Y.UA,
     ATTR_SPEED       = 'speed',
     ATTR_ANIM        = 'anim',
     ATTR_ITEMS       = 'items',
-    
+    ATTR_TRIGGER_SEL = 'triggerSelector',
+    ATTR_ITEM_SEL    = 'itemSelector',
+    ATTR_ITEM_BD_SEL = 'itemBodySelector',
+
     //  CSS class names
     CLASS_ACCORDION              = getClassName(ACCORDION),
     CLASS_ACCORDION_HIDDEN       = getClassName(ACCORDION, 'hidden'),
@@ -117,18 +118,18 @@ var UA = Y.UA,
     CLASS_BD_SLIDING             = getClassName(ACCORDION, ACCORDIONITEM, "bd", "sliding"),
     CLASS_ACCORDION_ITEM_FT      = getClassName(ACCORDION, ACCORDIONITEM, "ft"),
     CLASS_ACCORDION_ITEM_TRIGGER = getClassName(ACCORDION, ACCORDIONITEM, "trigger"),
-    
+
     //  CSS selectors
-    SELECTOR_ACCORDION_ITEM = PERIOD + CLASS_ACCORDION_ITEM,
-    SELECTOR_ACCORDION_ITEM_BD = PERIOD + CLASS_ACCORDION_ITEM_BD,
-    
+    PERIOD = ".",
     FC = '>.',
-    ITEM_QUERY          = FC + CLASS_ACCORDION_ITEM,
-    ITEM_TRIGGER_QUERY  = ITEM_QUERY + PERIOD + CLASS_ACCORDION_ITEM_TRIGGER + ', ' +
-                            ITEM_QUERY + FC + CLASS_ACCORDION_ITEM_HD + PERIOD + CLASS_ACCORDION_ITEM_TRIGGER + ', ' +
-                            ITEM_QUERY + FC + CLASS_ACCORDION_ITEM_HD + FC + CLASS_ACCORDION_ITEM_TRIGGER + ', ' +
-                            ITEM_QUERY + FC + CLASS_ACCORDION_ITEM_FT + PERIOD + CLASS_ACCORDION_ITEM_TRIGGER + ', ' +
-                            ITEM_QUERY + FC + CLASS_ACCORDION_ITEM_FT + FC + CLASS_ACCORDION_ITEM_TRIGGER;
+    SC  = ' .',
+    CS = ', ',
+    DEFAULT_ITEM_SELECTOR    =  FC + CLASS_ACCORDION_ITEM,
+    DEFAULT_ITEM_BD_SELECTOR = PERIOD + CLASS_ACCORDION_ITEM_BD,
+    DEFAULT_TRIGGER_SELECTOR =  DEFAULT_ITEM_SELECTOR + PERIOD + CLASS_ACCORDION_ITEM_TRIGGER + CS +
+                                DEFAULT_ITEM_SELECTOR + FC + PERIOD + CLASS_ACCORDION_ITEM_TRIGGER + CS +
+                                DEFAULT_ITEM_SELECTOR + FC + CLASS_ACCORDION_ITEM_HD + SC + CLASS_ACCORDION_ITEM_TRIGGER + CS +
+                                DEFAULT_ITEM_SELECTOR + FC + CLASS_ACCORDION_ITEM_FT + SC + CLASS_ACCORDION_ITEM_TRIGGER;
 
 function _computeSize (n, s) {
     return n.get('region')[s];
@@ -158,37 +159,38 @@ Y.namespace('Plugin').NodeAccordion = Y.Base.create("NodeAccordion", Y.Plugin.Ba
     _eventHandler: null,
 
     initializer: function (config) {
-        if ((this._root = this.get(HOST))) {
-            
-            
+        var instance = this;
+        if ((instance._root = instance.get(HOST))) {
+
             //  close all items and open the actived ones
-            this.get(ATTR_ITEMS).each(function(item) {
+            instance.get(ATTR_ITEMS).each(function(item) {
                 if (item.hasClass(CLASS_ACTIVE)) {
-                    this.expandItem(item);
+                    instance.expandItem(item);
                 } else {
-                    this.collapseItem(item);
+                    instance.collapseItem(item);
                 }
-            }, this);
+            });
 
             //  Wire up all event handlers
-            this._eventHandler = this._root.delegate('click', function(e) {
+            instance._eventHandler = instance._root.delegate('click', function(e) {
                 Y.log ('Accordion Trigger: ' + e, "info", "nodeAccordion");
-                this.toggleItem(e.currentTarget); // probably is better to pass the ancestor for the item
+                instance.toggleItem(e.currentTarget); // probably is better to pass the ancestor for the item
                 e.target.blur();
                 e.halt();
-            }, ITEM_TRIGGER_QUERY, this);
-            
+            }, instance.get(ATTR_TRIGGER_SEL));
+
             // removing the hidden class if exists, in case the accordion is hidden by default, 
             // and also adding the default accordion class just in case
-            this._root.replaceClass(CLASS_ACCORDION_HIDDEN, CLASS_ACCORDION);
+            instance._root.replaceClass(CLASS_ACCORDION_HIDDEN, CLASS_ACCORDION);
         }
     },
 
     destructor: function () {
-        if (this._eventHandler) {
-            this._eventHandler.detach();
+        var instance = this;
+        if (instance._eventHandler) {
+            instance._eventHandler.detach();
         }
-        this._eventHandler = null;
+        instance._eventHandler = null;
     },
 
     //  Protected methods
@@ -233,16 +235,16 @@ Y.namespace('Plugin').NodeAccordion = Y.Base.create("NodeAccordion", Y.Plugin.Ba
      * @return {Node} The matching DOM node or null if none found.
      */
     _getItemBody: function(node) {
-        var bd;
+        var bd, sel = this.get(ATTR_ITEM_BD_SEL);
         if (Y.Lang.isNumber(node)) {
             node = this.get(ATTR_ITEMS).item(node); 
         }
         // getting the child element with bd class
-        bd = node.one(SELECTOR_ACCORDION_ITEM_BD);
+        bd = node.one(sel);
         if (!bd) {
             node = node.next();
             // the bd element is not a child element, it might be the next child element
-            bd = ( (node && node.test(SELECTOR_ACCORDION_ITEM_BD)) ? node : null );
+            bd = ( (node && node.test(sel)) ? node : null );
             // this is needed to support a more semantic markup, like this one:
             /*
                 <dl id="myaccordion3" class="yui3-accordion">
@@ -286,17 +288,18 @@ Y.namespace('Plugin').NodeAccordion = Y.Base.create("NodeAccordion", Y.Plugin.Ba
      * @return {Object} Animation handler.
      */
     _animate: function(id, conf, fn) {
-        var anim = anims[id];
+        var anim = anims[id], 
+            instance = this;
         Y.log ('Anim Conf: ' + conf, "info", "nodeAccordion");
         // if the animation is underway: we need to stop it...
         if ((anim) && (anim.get ('running'))) {
             anim.stop();
         }
-        if (Y.Lang.isFunction(this.get(ATTR_ANIM))) {
-            conf.easing = this.get(ATTR_ANIM);
+        if (Y.Lang.isFunction(instance.get(ATTR_ANIM))) {
+            conf.easing = instance.get(ATTR_ANIM);
         }
         anim = new Y.Anim(conf);
-        anim.on('end', fn, this);
+        anim.on('end', fn, instance);
         anim.run();
         anims[id] = anim;
         return anim;
@@ -397,7 +400,7 @@ Y.namespace('Plugin').NodeAccordion = Y.Base.create("NodeAccordion", Y.Plugin.Ba
             };
         if (item && list.size() && (bd = instance._getItemBody(item)) && (id = Y.stamp(bd))) {
             // closing the item, based on the orientation, timer and anim attributes...
-            conf.to[o] = (((o==HEIGHT) && UA.ie && (UA.ie<7))?1:0); // hack for vertical accordion issue on Safari and Opera
+            conf.to[o] = (o==HEIGHT?instance.get('minHeight'):instance.get('minWidth'));
             conf.node = bd;
             instance._slidingBegin(item, bd);
             fn = function() {
@@ -434,13 +437,14 @@ Y.namespace('Plugin').NodeAccordion = Y.Base.create("NodeAccordion", Y.Plugin.Ba
     * @return {object} Plugin reference for chaining
     */
     expandAllItems: function () {
-        Y.log(("Expanding all items (only if attr multiple=true): " + this._root), "info", "nodeAccordion");
-        if (this.get(ATTR_MULTIPLE)) {
-            this.get(ATTR_ITEMS).each(function (node) {
-                this.expandItem(node);
-            }, this);
+        var instance = this;
+        Y.log(("Expanding all items (only if attr multiple=true): " + instance._root), "info", "nodeAccordion");
+        if (instance.get(ATTR_MULTIPLE)) {
+            instance.get(ATTR_ITEMS).each(function (node) {
+                instance.expandItem(node);
+            });
         }
-        return this;
+        return instance;
     },
     
     /**
@@ -450,13 +454,14 @@ Y.namespace('Plugin').NodeAccordion = Y.Base.create("NodeAccordion", Y.Plugin.Ba
     * @return {object} Plugin reference for chaining
     */
     collapseAllItems: function () {
-        Y.log(("Collapsing all items (only if attr multiple=true or attr persistent=false): " + this._root), "info", "nodeAccordion");
-        if (this.get(ATTR_MULTIPLE) || !this.get(ATTR_PERSISTENT)) {
-            this.get(ATTR_ITEMS).each(function (node) {
-                this.collapseItem(node);
-            }, this);
+        var instance = this;
+        Y.log(("Collapsing all items (only if attr multiple=true or attr persistent=false): " + instance._root), "info", "nodeAccordion");
+        if (instance.get(ATTR_MULTIPLE) || !instance.get(ATTR_PERSISTENT)) {
+            instance.get(ATTR_ITEMS).each(function (node) {
+                instance.collapseItem(node);
+            });
         }
-        return this;
+        return instance;
     },
     
     /**
@@ -467,12 +472,13 @@ Y.namespace('Plugin').NodeAccordion = Y.Base.create("NodeAccordion", Y.Plugin.Ba
     * @return {object} Plugin reference for chaining
     */
     expandItem: function ( node ) {
-        var item = this._getItem(node);
+        var instance = this,
+            item = instance._getItem(node);
         if (item) {
             Y.log(("Expanding an item: " + item), "info", "nodeAccordion");
-            this._openItem (item);
+            instance._openItem (item);
         }
-        return this;
+        return instance;
     },
     
     /**
@@ -483,12 +489,13 @@ Y.namespace('Plugin').NodeAccordion = Y.Base.create("NodeAccordion", Y.Plugin.Ba
     * @return {object} Plugin reference for chaining
     */
     collapseItem: function ( node ) {
-        var item = this._getItem(node);
-        if (item && item.hasClass(CLASS_ACTIVE) && (this.get(ATTR_MULTIPLE) || !this.get(ATTR_PERSISTENT))) {
+        var instance = this,
+            item = instance._getItem(node);
+        if (item && item.hasClass(CLASS_ACTIVE) && (instance.get(ATTR_MULTIPLE) || !instance.get(ATTR_PERSISTENT))) {
             Y.log(("Collapse an item: " + item), "info", "nodeAccordion");
-            this._closeItem(item);
+            instance._closeItem(item);
         }
-        return this;
+        return instance;
     },
     
     /**
@@ -499,18 +506,19 @@ Y.namespace('Plugin').NodeAccordion = Y.Base.create("NodeAccordion", Y.Plugin.Ba
     * @return {object} Plugin reference for chaining
     */
     toggleItem: function ( node ) {
-        var item = this._getItem(node);
-        Y.log ('Looking for accordion item: ' + SELECTOR_ACCORDION_ITEM + ': '+item, 'info', "nodeAccordion");
+        var instance = this,
+            item = instance._getItem(node);
+        Y.log ('Looking for accordion item: ' + node, 'info', "nodeAccordion");
         if (item) {
             // if the item is already opened, and is multiple and not persistent
             Y.log(("Toggling an item: " + item), "info", "nodeAccordion");
-            if (item.hasClass(CLASS_ACTIVE) && (this.get(ATTR_MULTIPLE) || !this.get(ATTR_PERSISTENT))) {
-                this._closeItem (item);
+            if (item.hasClass(CLASS_ACTIVE) && (instance.get(ATTR_MULTIPLE) || !instance.get(ATTR_PERSISTENT))) {
+                instance._closeItem (item);
             } else {
-                this._openItem (item);
+                instance._openItem (item);
             }
         }
-        return this;
+        return instance;
     }
 
 }, {
@@ -550,7 +558,7 @@ Y.namespace('Plugin').NodeAccordion = Y.Base.create("NodeAccordion", Y.Plugin.Ba
         items: {
             readOnly: true,
             getter: function (value) {
-                return this._root.all(ITEM_QUERY);
+                return this._root.all(this.get(ATTR_ITEM_SEL));
             }
         },
         
@@ -652,8 +660,75 @@ Y.namespace('Plugin').NodeAccordion = Y.Base.create("NodeAccordion", Y.Plugin.Ba
             setter : function (v) {
                 return (WHEELS.hasOwnProperty(v)?WHEELS[v]:v);
             }
+        },
+
+        /**
+        * Selector used in the delegate statement to identify trigger elements within the accordion markup. 
+        * A trigger element is a DOM element that can be clicked to expand/collapse an individual pane in the accordion.
+        * This selector is relative to the plugin HOST and NOT relative to the itemSelector due the fact that the 
+        * itemSelector itself could pontencially be the trigger as well.
+        * @attribute triggerSelector
+        * @initOnly
+        * @value .yui3-accordion-item.yui3-accordion-item-trigger, .yui3-accordion-item>.yui3-accordion-item-trigger, .yui3-accordion-item>.yui3-accordion-item-hd .yui3-accordion-item-trigger, .yui3-accordion-item>.yui3-accordion-item-ft .yui3-accordion-item-trigger
+        * @type string
+        */  
+        triggerSelector: {
+            initOnly: true,
+            value: DEFAULT_TRIGGER_SELECTOR
+        },
+
+        /**
+        * Selector used to identify items within the according markup.
+        * An item represents a pane in the accordion.
+        * This selector is relative to the plugin HOST.
+        * @attribute itemSelector
+        * @initOnly
+        * @value .yui3-accordion-item
+        * @type string
+        */  
+        itemSelector: {
+            initOnly: true,
+            value: DEFAULT_ITEM_SELECTOR
+        },
+
+        /**
+        * Selector used to identify the body of an item within the according markup.
+        * The body represents the element that will be animated. This selector is relative
+        * to the itemSelector attribute. In can also represent the DOM element next to the
+        * itemSelector match in case you want to use tables or DD/DT/DL markup structures.
+        * @attribute itemBodySelector
+        * @initOnly
+        * @value .yui3-accordion-item-bd
+        * @type string
+        */
+        itemBodySelector: {
+            initOnly: true,
+            value: DEFAULT_ITEM_BD_SELECTOR
+        },
+
+        /**
+        * You can specify what will be the height of the element when collapse (only for vertical accordions).
+        * Sometimes forcing the height to 0 breaks the layout in IE6. This depends on the mode.
+        * @attribute minHeight
+        * @initOnly
+        * @value 0
+        * @type number
+        */
+        minHeight: {
+            value: 0
+        },
+
+        /**
+        * You can specify what will be the width of the element when collapse (only for horizontal accordions).
+        * @attribute minWidth
+        * @initOnly
+        * @value 0
+        * @type number
+        */
+        minWidth: {
+            value: 0
         }
-    
+
     }
 
 });
