@@ -172,10 +172,11 @@ Y.Dispatcher = Y.Base.create(DISPATCHER, Y.Base, [], {
      * @param {Node} n A reference to the original SCRIPT tag Node, in case you want to get more specific attributes
      */
     _executeScript: function (text, jsNode) {
-        var d = ( jsNode ? jsNode.get('ownerDocument') : null ) || Y.one('doc'),
+        var doc = Y.config.doc,
+            d = ( jsNode ? jsNode.get('ownerDocument') : null ) || doc,
             h = d.one('head') || d.get('documentElement'),
             // creating a new script node to execute the inline javascrip code
-            newScript = Y.Node.create('<' + SC + '></' + SC + '>');
+            newScript = Y.one(doc.createElement(SC));
 
         Y.log('inline script tag: ' + text, 'info', DISPATCHER);
         if (text) {
