@@ -2,7 +2,7 @@
 <html>
 <head>
 <title>Dispatcher Tests</title>
-<script type="text/javascript" src="http://yui.yahooapis.com/3.2.0/build/yui/yui-min.js"></script>
+<script type="text/javascript" src="http://yui.yahooapis.com/3.3.0/build/yui/yui-debug.js"></script>
 </head>
 <body class="yui3-skin-sam">
 
@@ -11,9 +11,10 @@
       <p>Placeholder for dispatcher tests</p>
     </div>
 
-<script type="text/javascript" src="../../../build/gallery-dispatcher/gallery-dispatcher-min.js"></script>
+<script type="text/javascript" src="../../../build/gallery-dispatcher/gallery-dispatcher-debug.js"></script>
 <script type="text/javascript">
 YUI({
+    filter: 'debug',
     useConsoleOutput: true,
     logInclude: { TestRunner: true }
 }).use('test', 'console', 'gallery-dispatcher', function (Y) {
@@ -153,6 +154,33 @@ YUI({
               }, this);
               // using the dispatcher object to set a new content
               this.disp.set('normalize', true).set('content', newcontent);
+              this.wait();
+          },
+
+          "test injecting empty content": function() {
+              var newcontent = "";
+              // dispatcher uses a queue, it will take a while to inject the content
+              this.disp.on('ready', function() {
+                  this.resume();
+                  var result = Y.one('#demo').get('innerHTML');
+                  Assert.areEqual('', result, 'Empty content is not being injected correctly.');
+              }, this);
+              // using the dispatcher object to set a new content
+              this.disp._dispatch(newcontent);
+              this.wait();
+          },
+
+          "test injecting the same content twice": function() {
+              var newcontent = "same content twice";
+              // using the dispatcher object to set a new content
+              this.disp.set('content', newcontent);
+              // injecting the same content again manually
+              this.disp._dispatch(newcontent);
+              this.disp.on('ready', function() {
+                this.resume();
+                var result = Y.one('#demo').get('innerHTML');
+                Assert.areEqual(newcontent, result, 'Injecting the same content twice should do the exact same.');
+              }, this);
               this.wait();
           }
 
