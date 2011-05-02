@@ -1,0 +1,8 @@
+Fit
+    Truncation is a big problem when you handle complex inline structures. "Fit" can handle
+    many different truncation use cases.
+    More info at http://yuilibrary.com/gallery/show/fit
+
+HEAD
+    * Tested on YUI 3.3.0
+    * Initial release

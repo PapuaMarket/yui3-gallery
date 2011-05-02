@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+    <title>YUI Module: gallery-fit </title>
+    <!-- YUI3 Core //-->
+    <script type="text/javascript" src="http://yui.yahooapis.com/3.3.0/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+        <div id="doc">
+
+            <div id="demo">
+                <div class="hd"><h1 class="title">Module: gallery-fit</h1></div>
+                <div class="bd">
+
+                    
+
+                </div>
+            </div>
+
+        </div>
+
+<!-- Initialization process //-->
+<script type="text/javascript">
+YUI({
+    useConsoleOutput: true,
+    logInclude: { TestRunner: true },
+    groups: {
+        gallery: {
+            combine: false,
+            base: '../../../build/',
+            patterns: {
+                'gallery-': {}
+            }
+        }
+    }
+}).use('test', 'console', 'gallery-fit', function (Y) {
+
+      // creating the console...
+      (new Y.Console({
+            verbose: true,
+            newestOnTop: false
+      })).render();
+
+        // accordion 1
+        var placeholder = Y.one("#demo .bd");
+        var node;
+
+        // starting the testing process
+
+        // add the test cases and suites 
+        Y.Test.Runner.add(new Y.Test.Case({
+
+            name: "Fit Tests",
+
+            test_expanding_all: function(){
+                
+                node = Y.Node.create ('<div>inline <strong>strong</strong> highlighting elements <strong>right</strong> in the middle.</div>');
+                node.setStyles({
+                    display: 'block',
+                    width: '100px'
+                }).addStyle('debug');
+                placeholder.append( node );
+                node.fit();
+                Y.Assert.areEqual((parseInt(bd1.getStyle('height')) > 10), "accordion expand all items fails");
+                
+            }
+
+        })); 
+
+        //run all tests 
+        Y.Test.Runner.run();
+
+});
+</script>
+</body>
+</html>
