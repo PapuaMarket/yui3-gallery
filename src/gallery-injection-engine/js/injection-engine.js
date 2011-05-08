@@ -370,13 +370,9 @@ Y.extend(InjectionEngine, Y.Base, {
         custom_yui_config.t0 = new Date().getTime();
 
         // setting the bootstrap engine script (usually a full rollout script or the init.js)
-        if (JS) {
-            JS = 'var d=document;d.getElementsByTagName("head")[0].appendChild(d.createElement("script")).src="' + JS + '";';
-        }
+        JS = ( JS ? 'var d=document;d.getElementsByTagName("head")[0].appendChild(d.createElement("script")).src="' + JS + '";' : '' );
         // setting the bootstrap engine css (usually a full rollout)
-        if (CSS) {
-            JS = '<link rel="stylesheet" type="text/css" href="' + CSS + '">';
-        }
+        CSS = ( CSS ? '<link rel="stylesheet" type="text/css" href="' + CSS + '"/>' : '' );
 
         // config.js represent the script with the tray initialization routine
         BODY= ["<body onload='", JS, "'>", BODY, "</body>"].join('');
@@ -386,7 +382,7 @@ Y.extend(InjectionEngine, Y.Base, {
         container.append( iframe );
         // setting the content of the iframe
         doc = iframe._node.contentWindow.document;
-        doc.open().write('<!doctype html><html dir="' + instance.get('dir') + '" lang="' + instance.get('lang') + '"><head>' + META + '</head>' + BODY + '</html>');
+        doc.open().write('<!doctype html><html dir="' + instance.get('dir') + '" lang="' + instance.get('lang') + '"><head>' + META + CSS + '</head>' + BODY + '</html>');
         doc.close();
     }
 

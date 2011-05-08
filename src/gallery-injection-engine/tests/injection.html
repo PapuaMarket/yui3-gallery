@@ -1,235 +1,286 @@
 <!doctype html>
-<html>
+<html lang="en-US">
 <head>
     <title>Injection Engine Tests</title>    
     <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/combo?3.3.0/build/cssreset/reset-min.css&3.3.0/build/cssfonts/fonts-min.css">
-    <link rel="stylesheet" type="text/css" href="../../ura/assets/srp.css">
-    <script type="text/javascript" src="http://yui.yahooapis.com/3.3.0/build/yui/yui-min.js"></script>
+    <script type="text/javascript" src="http://yui.yahooapis.com/3.3.0/build/yui/yui-debug.js"></script>
 </head>
 <body class="yui3-skin-sam">
 
     <h1>Injection Engine Tests</h1>
 
-    <div>
-      <div id="hd">
-          <form id="sf" name="s" method="get" action="http://search.yahoo.com/search" accept-charset="utf-8" role="search">
-              <div class="bd">
-                  <ul class="tabs" id="tabs">
-                      <li class="on"> &nbsp; </li>
-                  </ul>
-                  <div id="sbx">
-                      <label for="yschsp" class="off-left">Search query</label><input type="text" class="sbq" id="yschsp" name="p" value="" tabindex="1" autocomplete="off"><input type="submit" class="sbb" value="Search" tabindex="2"><input type="hidden" name="fr2" value="sb-top"><input type="hidden" name="tmpl" value="QI007">
-                  </div>
-                  <div id="at" class="sa-hidden">
-                      <h2 class="off-left">Search Assist</h2>
-                  </div>
-              </div>
-          </form>
-      </div>
+    <div id="demo">
     </div>
 
-<script src="/jute_docs/jute.js"></script>
-<script type="text/javascript" src="../../../build/ura-injection/ura-injection-debug.js?coverage=1"></script>
+<script type="text/javascript" src="../../../build/gallery-injection-engine/gallery-injection-engine-debug.js"></script>
 <script type="text/javascript">
 YUI({
     useConsoleOutput: true,
     logInclude: { TestRunner: true }
-}).use('test', 'console', 'ura-injection', 'jute', function (Y) {
+}).use('test', 'console', 'gallery-injection-engine', 'node', 'base', function (Y) {
 
-  (new Y.Console({
-      verbose: true,
-      newestOnTop: false,
-      height: '500px',
-      width: '99%',
-      style: 'block'
-  })).render();
-  
-  Y.namespace("Tests");
+    (new Y.Console({
+        verbose: true,
+        newestOnTop: false,
+        height: '500px',
+        width: '99%',
+        style: 'block'
+    })).render();
 
-  Y.Tests.App = (function() {
+    Y.namespace("Tests");
 
-      var Assert = Y.Assert,
-          ObjectAssert = Y.ObjectAssert;
+    Y.Tests.InjectionEngine = (function() {
 
-      //-------------------------------------------------------------------------
-      // Base Test Suite
-      //-------------------------------------------------------------------------
-      var suite = new Y.Test.Suite("App Tests");
+        var Assert = Y.Assert,
+            ObjectAssert = Y.ObjectAssert,
+            dummyJS = 'http://yui.yahooapis.com/3.3.0/build/yui/yui-min.js',
+            dummyCSS = 'http://yui.yahooapis.com/3.3.0/build/cssreset/reset-min.css';
 
-      //-------------------------------------------------------------------------
-      // Test Case for encoding
-      //-------------------------------------------------------------------------
-      
-      suite.add(new Y.Test.Case({
+        //-------------------------------------------------------------------------
+        // Base Test Suite
+        //-------------------------------------------------------------------------
+        var suite = new Y.Test.Suite("Injection Engine Tests");
 
-          name: "Simple App Tests",
+        //-------------------------------------------------------------------------
+        // Communication Tests
+        //-------------------------------------------------------------------------
+        suite.add(new Y.Test.Case({
 
-          //---------------------------------------------
-          // Setup and tear down
-          //---------------------------------------------
-          setUp: function() {
-          },
+            name: "Communication Tests",
 
-          tearDown: function() {
-              if (this.ura) {
-                  this.ura.destroy();
-                  this.ura = null;
-              }
-              if (Y.one('iframe')) {
-                  Y.one('iframe').remove();
-              }
-              // removing all listeners
-              Y.one('#hd').purge(true);
-              Y.one('doc').focus();
-          },
+            //---------------------------------------------
+            // Setup and tear down
+            //---------------------------------------------
+            setUp: function() {
+            },
 
-          //---------------------------------------------------------------------
-          // Tests
-          //---------------------------------------------------------------------
+            tearDown: function() {
+                if (this.obj) {
+                    this.obj.destroy();
+                    this.obj = null;
+                }
+                if (Y.one('iframe')) {
+                    Y.one('iframe').remove();
+                }
+            },
 
-          testInit: function() {
-              this.ura = new Y.URA({
-                    searchbox: '#yschsp',
-                    sbc: '#sbx', // searchbox container
-                    urc: '#at',  // ura container
-                    hclass: 'sa-hidden',
-                    fclass: 'shl-reg'
-              });
-              Assert.isObject(this.ura, 'URA Phanton object was not defined correctly');
-          },
+            //---------------------------------------------------------------------
+            // Tests
+            //---------------------------------------------------------------------
+            "test init": function() {
+                this.obj = new Y.InjectionEngine({
+                    css: dummyCSS,
+                    js: dummyJS,
+                    container: '#demo'
+                });
+                Assert.isFunction(this.obj.boot, 'Injection Engine Object was not initialized correctly');
+            },
 
-          testAttributePropagation: function() {
-              var b = {};
-              this.ura = new Y.URA({
-                    searchbox: '#yschsp',
-                    sbc: '#sbx', // searchbox container
-                    urc: '#at',  // ura container
-                    hclass: 'sa-hidden',
-                    fclass: 'shl-reg',
-                    // some of them have default configuration
-                    url: 'default-url',
-                    pubid: 1,
-                    linkParams: {
-                        z: 1
-                    }
-              });
-              // mocking the real URA object
-              this.ura.connect({
-                  sandbox: {
-                      on: function(){},
-                      set: function (name, value) {
-                          b[name] = value;
-                      }
-                  },
-                  suggest: function(){},
-                  tray: {
-                      on: function () {}
-                  }
-              });
-              // testing default value
-              Assert.areEqual(b.url, 'default-url', 'The default value for url is not set.');
-              Assert.isUndefined(b.rmp, 'The default value for rmp should be undefined.');
-              Assert.areEqual(b.pubid, 1, 'The default numeric value for pubid is not set.');
-              Assert.isObject(b.linkParams, 'The default object for linkParams is not set.');
-              Assert.areEqual(b.linkParams.z, 1, 'The default numeric value for linkParams.z is not set.');
-              // setting custom values
-              this.ura.set('rmp', 'custom-rmp');
-              this.ura.set('url', 'custom-url');
-              this.ura.set('pubid', 'custom-pubid');
-              this.ura.set('linkStem', 'custom-linkStem');
-              this.ura.set('linkParams', {g: 9});
-              // testing custom value
-              Assert.areEqual(this.ura.get('rmp'), 'custom-rmp', 'The custom value for rmp is not set locally as expected.');
-              Assert.areEqual(b.url, 'custom-url', 'The custom value for url is not propagated correctly.');
-              Assert.areEqual(b.pubid, 'custom-pubid', 'The custom value for pubid is not propagated correctly.');
-              Assert.areEqual(b.linkStem, 'custom-linkStem', 'The custom value for linkStem is not propagated correctly.');
-              Assert.areEqual(b.linkParams.g, 9, 'The custom value for linkParams is not propagated correctly.');
-              // testing undefined value
-              this.ura.set('foo', 2);
-              Assert.isUndefined(b.foo, 'The custom value for foo is been propagated when it should not be propagated.');
-              this.ura.set('rmp', undefined);
-              Assert.isUndefined(b.rmp, 'The custom value for rmp is not undefined after setting it to undefined.');
-              this.ura.set('rmp', false);
-              Assert.isFalse(b.rmp, 'The custom value for rmp is not False after setting it to FALSE.');
-              this.ura.set('rmp', '');
-              Assert.areEqual(b.rmp, '', 'The custom value for rmp is not empty after setting it to empty string.');
-          },
+            "test attribute propagation": function() {
+                var b,
+                    dummy = new (Y.Base.create('dummy-bootstrap-engine', Y.Base, [], {}, {
+                        ATTRS: {
+                          foo: {},
+                          bar: {},
+                          invalid: {
+                              value: true
+                          },
+                          container: {
+                              value: 1
+                          }
+                       }
+                    }));
+                b = this.obj = new Y.InjectionEngine({
+                    css: dummyCSS,
+                    js: dummyJS,
+                    container: '#demo',
+                    dynamicAttrs: ['foo', 'bar'],
+                    foo: 1,
+                    bar: 2
+                });
+                b.boot();
+                // setting some more attributes in the middle
+                b.set('bar', 3).set('js', 4);
+                // simulating the callback
+                b._connect(dummy);
+                
+                // testing default value
+                Assert.areEqual(1, dummy.get('foo'), 'Dynamic attributes are not being propagated on ready (flush).');
+                Assert.areEqual(3, dummy.get('bar'), 'Dynamic attributes that were changed are not being propagated on ready (flush).');
+                Assert.areEqual('#demo', dummy.get('container'), 'Static attributes are not being propagated on ready.');
+                Assert.areEqual(dummyJS, dummy.get('js'), 'Static attributes changed before _connnect should not be propagated on ready.');
+                
+                // setting some attributes
+                b.set('foo', 4).set('invalid', 5).set('css', 6);
+                // testing custom value
+                Assert.areEqual(4, dummy.get('foo'), 'Dynamic attributes are not being propagated.');
+                Assert.areEqual(true, dummy.get('invalid'), 'Non-dynamic attributes are being incorrectly propagated.');
+                Assert.areEqual(dummyCSS, dummy.get('css'), 'Static attributes are being incorrectly propagated onChange.');
+            },
 
-          testCustomBeacons: function() {
-              var b = {};
-              this.ura = new Y.URA({
-                    searchbox: '#yschsp',
-                    sbc: '#sbx', // searchbox container
-                    urc: '#at',  // ura container
-                    hclass: 'sa-hidden',
-                    fclass: 'shl-reg',
-                    pv: {
-                        a: 2
-                    }
-              });
-              // mocking the real URA object
-              this.ura.connect({
-                  sandbox: {
-                      on: function(){},
-                      set: function (name, value) {
-                          b[name] = value;
-                      }
-                  },
-                  suggest: function(){},
-                  tray: {
-                      on: function () {}
-                  }
-              });
-              Assert.isNotUndefined(b.pv, 'The default value for beacons is not propagated correctly.');
-              Assert.areEqual(b.pv.a, 2, 'The default value for beacons is not propagated as an object.');
-              this.ura.set('pv', {
-                  c: 1
-              });
-              Assert.areEqual(b.pv.c, 1, 'The raw beacons definition is not propagated correctly.');
-          },
+            "test custom events": function() {
+                var flag, e1, e2, e3, e4,
+                    b,
+                    dummy = new (Y.Base.create('dummy-bootstrap-engine', Y.Base, [], {}, {
+                        ATTRS: {
+                          foo: {},
+                          bar: {},
+                          invalid: {
+                              value: true
+                          },
+                          container: {
+                              value: 1
+                          }
+                       }
+                    }));
+                b = this.obj = new Y.InjectionEngine({
+                    css: dummyCSS,
+                    js: dummyJS,
+                    container: '#demo',
+                    dynamicEvents: [
+                        'foo', 
+                        {
+                            name: 'bar', 
+                            rename: 'bar2'
+                        }, 
+                        {
+                            name: 'bar',
+                            rename: 'bar2'
+                        },
+                        {
+                            name: 'baz',
+                            fn: function (ev, name, o) {
+                                flag = ev.a;
+                                e3 = 'baz';
+                                return false; // avoiding firing the regular event
+                            }
+                        },
+                        {
+                            name: 'qux',
+                            rename: 'qux2',
+                            fn: function (ev, name, o) {
+                                return true;
+                            }
+                        }
+                    ]
+                });
+                // some listeners before the boot
+                b.on('foo', function() {
+                    e1 = 'foo';
+                });
+                
+                b.boot();
+                // some listeners before the connect
+                b.on('bar2', function () {
+                    e2 = 'bar';
+                });
+                
+                // simulating the callback
+                b._connect(dummy);
+                // some lazy listeners
+                b.on ('baz', function () {
+                    e3 = 'this should never gets executed';
+                });
+                b.on ('qux2', function () {
+                    e4 = 'qux';
+                });
+                
+                // firing some events
+                dummy.fire('foo');
+                Assert.areEqual('foo', e1, 'A regular event is not propagated correctly.');
+                dummy.fire('bar');
+                Assert.areEqual('bar', e2, 'The rename configuration is not working correctly.');
+                dummy.fire('baz', {
+                    a: 1
+                });
+                Assert.areEqual('baz', e3, 'custom function that returns nothing is not working as expected.');
+                Assert.areEqual(1, flag, 'Custom attribute passed to a regular event is not accessible in the custom function.');
+                dummy.fire('qux');
+                Assert.areEqual('qux', e4, 'Renamed events with custom function return true is not working as expected.');
+            }
 
-          testBeaconEvents: function() {
-              var b, p, sandbox = new Y.Base({});
-              this.ura = new Y.URA({
-                    searchbox: '#yschsp',
-                    sbc: '#sbx', // searchbox container
-                    urc: '#at',  // ura container
-                    hclass: 'sa-hidden',
-                    fclass: 'shl-reg'
-              });
-              // mocking the real URA object
-              this.ura.connect({
-                  sandbox: sandbox,
-                  suggest: function(){},
-                  tray: {
-                      on: function () {}
-                  }
-              });
-              this.ura.on('log:pv:o', function (e) {
-                  b = true;
-                  p = e.params;
-              });
-              sandbox.fire ('log:pv', {
-                  id: 'o',
-                  params: {
-                      a: 1
-                  }
-              });
-              Assert.isNotUndefined(b, 'The log:pv event was not correctly propagated.');
-              Assert.areEqual(p.a, 1, 'The log:pv:o event is not propagating the beacon parameters.');
-          }
+        }));
 
-      }));
+        //-------------------------------------------------------------------------
+        // IFrame Tests
+        //-------------------------------------------------------------------------
+        suite.add(new Y.Test.Case({
 
-      //return it
-      return suite;
+            name: "IFrame Tests",
 
-  })();
+            //---------------------------------------------
+            // Setup and tear down
+            //---------------------------------------------
+            setUp: function() {
+            },
 
-  //add to the testrunner and run
-  Y.Test.Runner.add(Y.Tests.App);
-  // executing JUTE is posible to get coverage
-  ( Y.UnitTest ? Y.UnitTest.go() : Y.Test.Runner.run() );
+            tearDown: function() {
+                if (this.obj) {
+                    this.obj.destroy();
+                    this.obj = null;
+                }
+                if (Y.one('iframe')) {
+                    Y.one('iframe').remove();
+                }
+            },
+
+            //---------------------------------------------------------------------
+            // Tests
+            //---------------------------------------------------------------------
+            "test iframe creation": function() {
+                this.obj = new Y.InjectionEngine({
+                    css: dummyCSS,
+                    js: dummyJS,
+                    container: '#demo'
+                });
+                this.obj.boot();
+                var iframe = Y.one('#demo iframe');
+                Assert.isObject(iframe, 'Injection Engine Object is not creating the iframe on boot.');
+            },
+
+            "test inherited values": function() {
+                this.obj = new Y.InjectionEngine({
+                    css: dummyCSS,
+                    js: dummyJS,
+                    container: '#demo'
+                });
+                this.obj.boot();
+                var idoc = Y.one('#demo iframe')._node.contentWindow.document;
+                Assert.areEqual('en-US', idoc.documentElement.lang, 'Injection Engine is not collecting the current lang from the HOST page.');
+                Assert.areEqual('ltr', idoc.documentElement.dir, 'Injection Engine is not collecting the current dir from the HOST page.');
+            },
+
+            "test custom body": function() {
+                this.obj = new Y.InjectionEngine({
+                    css: dummyCSS,
+                    js: dummyJS,
+                    inline: 'a=1;',
+                    container: '#demo'
+                });
+                this.obj.boot();
+                var iWin = Y.one('#demo iframe')._node.contentWindow;
+                iY = YUI({
+                    win: iWin,
+                    doc: iWin.document
+                }).use('node');
+                // the readiness of the iframe is async
+                this.wait(function() {
+                    Assert.areEqual(1, iY.all('head script').size(), 'The js attribute was not added as a JS tag in the head of the iframe.');
+                    Assert.areEqual(2, iY.all('body script').size(), 'The config and the inline attributes were not added as JS tags in the body of the iframe.');
+                    Assert.areEqual(1, iY.all('head link').size(), 'The css attribute was not added as a LINK tag in the head of the iframe.');
+                }, 500)
+            }
+
+        }));
+
+        //return it
+        return suite;
+
+    })();
+
+    //add to the testrunner and run
+    Y.Test.Runner.add(Y.Tests.InjectionEngine);
+    Y.Test.Runner.run();
 
 });
 </script>
