@@ -59,7 +59,12 @@ Y.mix(BootstrapEngine, {
          * @writeOnce
          * @description selector for the iframe's container. This is relative to the parent document.
          */
-        container: {},
+        container: {
+             getter: function (v) {
+                 var host = this.get(ATTR_HOST);
+                 return host && host.one( v );
+             }
+        },
         /**
          * @attribute iframe
          * @type {Node}
@@ -68,8 +73,7 @@ Y.mix(BootstrapEngine, {
          */
         iframe: {
             getter: function () {
-                var host = this.get(ATTR_HOST);
-                return host && host.one( this.get('container') + ' iframe' );
+                return this.get('container').one(' iframe' );
             }
         },
         /**
