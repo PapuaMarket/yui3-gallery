@@ -21,7 +21,8 @@
 var config,
     global_yui_config,
     custom_yui_config,
-    documentElem = Y.config.doc.documentElement;
+    documentElem = Y.config.doc.documentElement,
+    script = 'script';
 
 ///////////////////////////////////////////////////////////////////////////
 //
@@ -299,11 +300,11 @@ Y.extend(InjectionEngine, Y.Base, {
     },
 
     _buildJS: function (url) {
-        return url;
+        return Y.Array( (url || []) );
     },
 
     _buildCSS: function (url) {
-        return url;
+        return Y.Array( (url || []) );
     },
 
     _buildMeta: function (config) {
@@ -315,7 +316,6 @@ Y.extend(InjectionEngine, Y.Base, {
     _buildBody: function (config) {
         var b = ['<br>'],
             J = Y.JSON || JSON,
-            script = 'script',
             yui_config;
 
         // global_yui_config will be transformed into a custom YUI_config object as part of the iframe body, but 
@@ -335,17 +335,7 @@ Y.extend(InjectionEngine, Y.Base, {
         Y.log ('Setting initial YUI_config=' + yui_config, 'info', 'injection');
         b.push('<', script, '>YUI_config=', yui_config, ';</', script, '>');
 
-        // computing seed file if needed (usually needed for debug mode only)
-        if (config.seed) {
-            b.push('<', script, ' src="', config.seed, '">', '</', script, '>');
-        }
-
-        // supporting inline script that need to be included at the end of the body (usually needed for debug mode only)
-        if (config.inline) {
-            b.push('<', script, '>', config.inline, '</', script, '>');
-        }
-
-        return b.join('');
+        return b;
     },
 
     /**
@@ -369,20 +359,28 @@ Y.extend(InjectionEngine, Y.Base, {
         // setting the timestamp 0 right before starting the injection process (just in case you want to do some perf)
         custom_yui_config.t0 = new Date().getTime();
 
-        // setting the bootstrap engine script (usually a full rollout script or the init.js)
-        JS = ( JS ? 'var d=document;d.getElementsByTagName("head")[0].appendChild(d.createElement("script")).src="' + JS + '";' : '' );
         // setting the bootstrap engine css (usually a full rollout)
-        CSS = ( CSS ? '<link rel="stylesheet" type="text/css" href="' + CSS + '"/>' : '' );
+        Y.each (CSS, function (value, indx) {
+            CSS[indx] = ( value.indexOf('http') === 0 ?
+                            '<link rel="stylesheet" type="text/css" href="' + value + '"/>' :
+                            '<style>' + value + '</style>'
+                        );
+        });
+        // setting the bootstrap engine js (usually a full rollout)
+        Y.each (JS, function (value, indx) {
+            JS[indx] = ( value.indexOf('http') === 0 ?
+                            '<' + script + ' src="' + value + '"></' + script + '>' :
+                            '<' + script + '>' + value + '</' + script + '>'
+                       );
+        });
 
-        // config.js represent the script with the tray initialization routine
-        BODY= ["<body onload='", JS, "'>", BODY, "</body>"].join('');
         // setting up the iframe src to avoid warnings
         iframe.set('src', 'javascript' + ((Y.UA.ie) ? ':false' : ':') + ';');
         // injecting the structure into the container
         container.append( iframe );
         // setting the content of the iframe
         doc = iframe._node.contentWindow.document;
-        doc.open().write('<!doctype html><html dir="' + instance.get('dir') + '" lang="' + instance.get('lang') + '"><head>' + META + CSS + '</head>' + BODY + '</html>');
+        doc.open().write('<!doctype html><html dir="' + instance.get('dir') + '" lang="' + instance.get('lang') + '"><head>' + META + CSS.join('') + '</head><body>' + BODY.join('') + JS.join('') + '</body></html>');
         doc.close();
     }
 

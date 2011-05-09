@@ -73,7 +73,8 @@ Y.mix(BootstrapEngine, {
          */
         iframe: {
             getter: function () {
-                return this.get('container').one(' iframe' );
+                var c = this.get('container');
+                return c && c.one('iframe' );
             }
         },
         /**
@@ -119,14 +120,34 @@ Y.extend(BootstrapEngine, Y.Base, {
     },
 
     /**
+     * Basic initialization routine, styling the iframe, binding events and
+     * connecting the bootstrap engine with the injection engine.
+     *
+     * @method _bind
+     * @protected
+     */
+    _init: function () {
+        var instance = this;
+        Y.log ('Init', 'info', 'bootstrap');
+        // connecting with the injection engine before doing anything else
+        instance._connect();
+        // adjust the iframe container in preparation for the first display action
+        instance._styleIframe();
+        // binding some extra events
+        instance._bind();
+        // connecting the bootstrap with the injection engine
+        instance._ready();
+    },
+
+    /**
      * Connects the bootstrap with the injection engine running in the parent window. This method 
      * defines the hand-shake process between them. This method is meant to be called by
      * the bootstrap engine _init method to start the connection.
      *
-     * @method _ready
+     * @method _connect
      * @protected
      */
-    _ready: function () {
+    _connect: function () {
         var instance = this,
             guid = Y.config.guid, // injection engine guid value
             // getting a reference to the parent window callback function to notify
@@ -137,46 +158,7 @@ Y.extend(BootstrapEngine, Y.Base, {
         if (callback) {
             callback (instance);
         }
-        Y.log ('Bootstrap ready', 'info', 'bootstrap');
-    },
-
-    /**
-     * Basic initialization routine, styling the iframe, binding events and
-     * connecting the bootstrap engine with the injection engine.
-     *
-     * @method _bind
-     * @protected
-     */
-    _init: function () {
-        var instance = this;
-        Y.log ('Init', 'info', 'bootstrap');
-        // adjust the iframe container in preparation for the first display action
-        instance._styleIframe();
-        // binding some extra events
-        instance._bind();
-        // connecting the bootstrap with the injection engine
-        instance._ready();
-    },
-
-    /**
-     * The iframe that holds the bootstrap engine sometimes is used as a UI overlay.
-     * In this case, you can style it through this method. By default, it will set 
-     * border, frameBorder, marginWidth, marginHeight, leftMargin and topMargin to
-     * cero, and allowTransparency to true.
-     *
-     * @method _styleIframe
-     * @protected
-     */
-    _styleIframe: function () {
-        var optimizedName = 'setAttribute',
-            iframe = this.get('iframe'); // TODO: this have to be in a lang bundle
-        Y.log ('Styling the iframe', 'info', 'bootstrap');
-        Y.each (['border', 'frameBorder', 'marginWidth', 'marginHeight', 'leftMargin', 'topMargin'], function (name) {
-            iframe[optimizedName](name, 0);
-        });
-        // this is equivalent to: iframe.setAttribute('foo', 'bar').setAttribute('more', 'chaining'); but 
-        // since we don't have setAttributes, we do this crazy stuff to gain some bytes with the compressor.
-        iframe[optimizedName]('allowTransparency', "true");
+        Y.log ('Bootstrap connect', 'info', 'bootstrap');
     },
 
     /**
@@ -188,7 +170,38 @@ Y.extend(BootstrapEngine, Y.Base, {
      */
     _bind: function () {
         Y.log ('Binding bootstrap', 'info', 'bootstrap');
-    }
+    },
+
+    /**
+     * Overrides/Extends this prototype method to do your mojo.
+     *
+     * @method _ready
+     * @protected
+     */
+    _ready : function () {
+         Y.log ('Bootstrap is ready', 'info', 'bootstrap');
+     },
+
+     /**
+      * The iframe that holds the bootstrap engine sometimes is used as a UI overlay.
+      * In this case, you can style it through this method. By default, it will set 
+      * border, frameBorder, marginWidth, marginHeight, leftMargin and topMargin to
+      * cero, and allowTransparency to true.
+      *
+      * @method _styleIframe
+      * @protected
+      */
+     _styleIframe: function () {
+         var optimizedName = 'setAttribute',
+             iframe = this.get('iframe'); // TODO: this have to be in a lang bundle
+         Y.log ('Styling the iframe', 'info', 'bootstrap');
+         Y.each (['border', 'frameBorder', 'marginWidth', 'marginHeight', 'leftMargin', 'topMargin'], function (name) {
+             iframe[optimizedName](name, 0);
+         });
+         // this is equivalent to: iframe.setAttribute('foo', 'bar').setAttribute('more', 'chaining'); but 
+         // since we don't have setAttributes, we do this crazy stuff to gain some bytes with the compressor.
+         iframe[optimizedName]('allowTransparency', "true");
+     }
 
 });
 

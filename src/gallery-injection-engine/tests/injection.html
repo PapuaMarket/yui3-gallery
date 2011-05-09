@@ -253,8 +253,7 @@ YUI({
             "test custom body": function() {
                 this.obj = new Y.InjectionEngine({
                     css: dummyCSS,
-                    js: dummyJS,
-                    inline: 'a=1;',
+                    js: [dummyJS, 'a=1;'],
                     container: '#demo'
                 });
                 this.obj.boot();
@@ -265,10 +264,9 @@ YUI({
                 }).use('node');
                 // the readiness of the iframe is async
                 this.wait(function() {
-                    Assert.areEqual(1, iY.all('head script').size(), 'The js attribute was not added as a JS tag in the head of the iframe.');
-                    Assert.areEqual(2, iY.all('body script').size(), 'The config and the inline attributes were not added as JS tags in the body of the iframe.');
+                    Assert.areEqual(3, iY.all('body script').size(), 'The config and the js attributes were not added as JS tags in the body of the iframe.');
                     Assert.areEqual(1, iY.all('head link').size(), 'The css attribute was not added as a LINK tag in the head of the iframe.');
-                }, 500)
+                }, 500);
             }
 
         }));
