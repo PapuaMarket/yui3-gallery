@@ -1,15 +1,15 @@
 <!doctype html>
 <html>
 <head>
-    <title>YUI Module: gallery-fit </title>
-    <!-- YUI3 Core //-->
+    <title>YUI Module: gallery-node-fit </title>
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/combo?3.3.0/build/cssreset/reset-min.css&3.3.0/build/cssfonts/fonts-min.css">
     <script type="text/javascript" src="http://yui.yahooapis.com/3.3.0/build/yui/yui-min.js"></script>
 </head>
 <body class="yui3-skin-sam">
         <div id="doc">
 
             <div id="demo">
-                <div class="hd"><h1 class="title">Module: gallery-fit</h1></div>
+                <div class="hd"><h1 class="title">Module: gallery-node-fit</h1></div>
                 <div class="bd">
 
                     
@@ -19,56 +19,84 @@
 
         </div>
 
+<script type="text/javascript" src="/jute_docs/jute.js"></script>
+<script type="text/javascript" src="../../../build/gallery-node-fit/gallery-node-fit-debug.js"></script>
 <!-- Initialization process //-->
 <script type="text/javascript">
 YUI({
     useConsoleOutput: true,
-    logInclude: { TestRunner: true },
-    groups: {
-        gallery: {
-            combine: false,
-            base: '../../../build/',
-            patterns: {
-                'gallery-': {}
-            }
-        }
-    }
-}).use('test', 'console', 'gallery-fit', function (Y) {
+    logInclude: { TestRunner: true }
+}).use('test', 'console', 'node', 'gallery-node-fit', 'jute', function (Y) {
 
-      // creating the console...
-      (new Y.Console({
-            verbose: true,
-            newestOnTop: false
-      })).render();
+    (new Y.Console({
+        verbose: true,
+        newestOnTop: false,
+        height: '500px',
+        width: '99%',
+        style: 'block'
+    })).render();
 
-        // accordion 1
+    Y.namespace("Tests");
+
+    Y.Tests.InjectionEngine = (function() {
+
+        var Assert = Y.Assert,
+            ObjectAssert = Y.ObjectAssert;
+
         var placeholder = Y.one("#demo .bd");
         var node;
 
-        // starting the testing process
+        //-------------------------------------------------------------------------
+        // Base Test Suite
+        //-------------------------------------------------------------------------
+        var suite = new Y.Test.Suite("Fit Tests");
 
-        // add the test cases and suites 
-        Y.Test.Runner.add(new Y.Test.Case({
+        //-------------------------------------------------------------------------
+        // Communication Tests
+        //-------------------------------------------------------------------------
+        suite.add(new Y.Test.Case({
 
-            name: "Fit Tests",
+            name: "Basic Fit Tests",
 
-            test_expanding_all: function(){
-                
-                node = Y.Node.create ('<div>inline <strong>strong</strong> highlighting elements <strong>right</strong> in the middle.</div>');
+            //---------------------------------------------
+            // Setup and tear down
+            //---------------------------------------------
+            setUp: function() {
+            },
+
+            tearDown: function() {
+            },
+
+            //---------------------------------------------------------------------
+            // Tests
+            //---------------------------------------------------------------------
+            "test init": function() {
+                node = Y.Node.create('<div>hey</div>');
+                Assert.isFunction(node.fit, 'Fit extension was not added to the node prototype.');
+            },
+
+            "test basic truncation": function() {
+                node = Y.Node.create('<div>inline <strong>strong</strong> highlighting elements <strong>right</strong> in the middle.</div>');
                 node.setStyles({
                     display: 'block',
                     width: '100px'
-                }).addStyle('debug');
-                placeholder.append( node );
+                });
+                placeholder.append(node);
                 node.fit();
-                Y.Assert.areEqual((parseInt(bd1.getStyle('height')) > 10), "accordion expand all items fails");
-                
+                Y.Assert.isTrue((parseInt(node.getStyle('height'), 10) > 10), "simple line is not being truncated accordingly.");
             }
 
-        })); 
+        }));
 
-        //run all tests 
-        Y.Test.Runner.run();
+        //return it
+        return suite;
+
+    })();
+
+    //add to the testrunner and run
+    Y.Test.Runner.add(Y.Tests.InjectionEngine);
+    // executing JUTE is posible to get coverage
+    (Y.UnitTest ? Y.UnitTest.go() : Y.Test.Runner.run());
 
 });
 </script>

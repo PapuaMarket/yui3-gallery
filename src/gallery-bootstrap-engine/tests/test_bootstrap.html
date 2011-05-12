@@ -13,12 +13,13 @@
         <iframe></iframe>
     </div>
 
+<script type="text/javascript" src="/jute_docs/jute.js"></script>
 <script type="text/javascript" src="../../../build/gallery-bootstrap-engine/gallery-bootstrap-engine-debug.js"></script>
 <script type="text/javascript">
 YUI({
     useConsoleOutput: true,
     logInclude: { TestRunner: true }
-}).use('test', 'console', 'gallery-bootstrap-engine', 'base', function (Y) {
+}).use('test', 'console', 'gallery-bootstrap-engine', 'base', 'jute', function (Y) {
 
     (new Y.Console({
         verbose: true,
@@ -86,7 +87,8 @@ YUI({
 
     //add to the testrunner and run
     Y.Test.Runner.add(Y.Tests.BootstrapEngine);
-    Y.Test.Runner.run();
+    // executing JUTE is posible to get coverage
+    ( Y.UnitTest ? Y.UnitTest.go() : Y.Test.Runner.run() );
 
 });
 </script>
