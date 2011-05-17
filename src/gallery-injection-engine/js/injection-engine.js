@@ -22,7 +22,8 @@ var config,
     global_yui_config,
     custom_yui_config,
     documentElem = Y.config.doc.documentElement,
-    script = 'script';
+    script = 'script',
+    regexUrlDetection = /^(http[s]?:\/\/|\/\/[\w\d]+)/; // supporting http://domain..., https://domain... and //domain...
 
 ///////////////////////////////////////////////////////////////////////////
 //
@@ -69,18 +70,18 @@ Y.mix(InjectionEngine, {
         },
         /**
          * @attribute css
-         * @type {String}
+         * @type {String|Array}
          * @writeOnce
-         * @description The url for the CSS rollout used to style the content of the tray.
+         * @description One or more style blocks or urls. e.g., ['http://full/path/is/required/script.js', 'https://secure/path/also/works/script.js', 'function(){ return 1; }', {url: 'relative/path.js'}]
          */
         css: {
             getter: '_buildCSS'
         },
         /**
          * @attribute js
-         * @type {String}
+         * @type {String|Array}
          * @writeOnce
-         * @description The url for the JS rollout used to instantiate the tray within the iframe.
+         * @description One or more js blocks or urls. e.g., ['http://full/path/is/required/style.css', 'https://secure/path/also/works/style.css', 'inline{css:property;}', {url: 'relative/path.css'}]
          */
         js: {
             getter: '_buildJS'
@@ -146,7 +147,7 @@ Y.mix(InjectionEngine, {
 Y.extend(InjectionEngine, Y.Base, {
 
     /**
-     * Construction logic executed during URA Injection Engine instantiation.
+     * Construction logic executed during Injection Engine instantiation.
      *
      * @method initializer
      * @protected
@@ -245,6 +246,7 @@ Y.extend(InjectionEngine, Y.Base, {
         });
 
         Y.log('Bootstrap is ready.', 'info', 'injection');
+        return this._ready();
     },
 
     /**
@@ -275,6 +277,10 @@ Y.extend(InjectionEngine, Y.Base, {
      *
      * @method _ready
      * @protected
+     * @return {boolean} use this to control the state of the initialization on the bootstrap engine since it might 
+     * take some time to load the stuff in the iframe, and the user might interact with the page
+     * invalidating the initialization routine. If return true, the _ready method in the bootstrap will be called at
+     * the end of the initialization.
      */
     _ready: function() {
         Y.log ('Ready', 'info', 'injection');
@@ -299,20 +305,52 @@ Y.extend(InjectionEngine, Y.Base, {
         }
     },
 
+    /**
+     * Getter method for the attribute called js.
+     *
+     * @method _buildJS
+     * @param url {String|Array} One or more js blocks or urls.
+     * @protected
+     * @return {Array} Collection of urls or inline scripts to be inserted as script tags the body of the iframe.
+     */
     _buildJS: function (url) {
         return Y.Array( (url || []) );
     },
 
+    /**
+     * Getter method for the attribute called css.
+     *
+     * @method _buildCSS
+     * @param url {String|Array} One or more style blocks or urls.
+     * @protected
+     * @return {Array} Collection of urls or inline styles to be inserted as link or style tags the head of the iframe.
+     */
     _buildCSS: function (url) {
         return Y.Array( (url || []) );
     },
 
+    /**
+     * Build the basic meta tags for the iframe document. By default, it adds the content-type as text/html and
+     * charset as utf-8.
+     *
+     * @method _buildMeta
+     * @param config {Object} Literal object with the initial configuration from the injection engine.
+     * @protected
+     * @return {string} HTML Fragment to be inserted at the top of the header.
+     */
     _buildMeta: function (config) {
-        var m = '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>';
-        // m += '<link rel="dns-prefetch" href="//host_name_to_prefetch.com/">'
-        return m;
+        return '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>';
     },
 
+    /**
+     * Build the basic html content for the iframe's body. By default, it adds the required YUI_config structure.
+     * If JSON is available, the custom yui config and the global yui config will be mixed and stringified.
+     *
+     * @method _buildBody
+     * @param config {Object} Literal object with the initial configuration from the injection engine.
+     * @protected
+     * @return {Array} Collection of HTML Fragments to be inserted at the body of the iframe.
+     */
     _buildBody: function (config) {
         var b = ['<br>'],
             J = Y.JSON || JSON,
@@ -361,15 +399,17 @@ Y.extend(InjectionEngine, Y.Base, {
 
         // setting the bootstrap engine css (usually a full rollout)
         Y.each (CSS, function (value, indx) {
-            CSS[indx] = ( value.indexOf('http') === 0 ?
-                            '<link rel="stylesheet" type="text/css" href="' + value + '"/>' :
+            value = instance._testFullURL(value);
+            CSS[indx] = ( value && Y.Lang.isObject(value) ?
+                            '<link rel="stylesheet" type="text/css" href="' + value.url + '"/>' :
                             '<style>' + value + '</style>'
                         );
         });
         // setting the bootstrap engine js (usually a full rollout)
         Y.each (JS, function (value, indx) {
-            JS[indx] = ( value.indexOf('http') === 0 ?
-                            '<' + script + ' src="' + value + '"></' + script + '>' :
+            value = instance._testFullURL(value);
+            JS[indx] = ( value && Y.Lang.isObject(value) ?
+                            '<' + script + ' src="' + value.url + '"></' + script + '>' :
                             '<' + script + '>' + value + '</' + script + '>'
                        );
         });
@@ -382,6 +422,21 @@ Y.extend(InjectionEngine, Y.Base, {
         doc = iframe._node.contentWindow.document;
         doc.open().write('<!doctype html><html dir="' + instance.get('dir') + '" lang="' + instance.get('lang') + '"><head>' + META + CSS.join('') + '</head><body>' + BODY.join('') + JS.join('') + '</body></html>');
         doc.close();
+    },
+
+    /**
+     * Detect an url pattern on a string value to decide if the string is a full url.
+     *
+     * @method _testFullURL
+     * @param value {String} string to be confirmed as a full url.
+     * @protected
+     * @return {String|Object} If the value is an url, returns an object {url: value}, if not, returns the value.
+     */
+    _testFullURL: function (value) {
+        if (Y.Lang.isString(value)) {
+            value =  ( regexUrlDetection.test(value) ? {url: value} : value );
+        }
+        return ( Y.Lang.isObject(value) && !value.url ? null: value );
     }
 
 });
