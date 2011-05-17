@@ -289,6 +289,23 @@ YUI({
                 }, 500);
             },
 
+            "test html fragment injection": function() {
+                this.obj = new Y.InjectionEngine({
+                    html: '<p>dummy</p>',
+                    container: '#demo'
+                });
+                this.obj.boot();
+                var iWin = Y.one('#demo iframe')._node.contentWindow;
+                iY = YUI({
+                    win: iWin,
+                    doc: iWin.document
+                }).use('node');
+                var p = iY.one('p');
+                // the readiness of the iframe is async
+                Assert.isObject(p, 'The html fragment is not been injected correctly.');
+                Assert.areEqual(0, iY.one('body').get('children').indexOf(p), 'The html fragment is not been injected at the top of the body.');
+            },
+
             "test url detection system": function() {
                 this.obj = new Y.InjectionEngine({
                     css: null,

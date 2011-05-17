@@ -69,6 +69,13 @@ Y.mix(InjectionEngine, {
             readOnly: true
         },
         /**
+         * @attribute html
+         * @type {String}
+         * @writeOnce
+         * @description The HTML fragment that will be injected at the top of the Body element in the iframe.
+         */
+         // there is not need to have an actual "html" attribute explicitely here, let's use the config object instead.
+        /**
          * @attribute css
          * @type {String|Array}
          * @writeOnce
@@ -352,7 +359,7 @@ Y.extend(InjectionEngine, Y.Base, {
      * @return {Array} Collection of HTML Fragments to be inserted at the body of the iframe.
      */
     _buildBody: function (config) {
-        var b = ['<br>'],
+        var b = [(config.html ? config.html : '<br>')],
             J = Y.JSON || JSON,
             yui_config;
 
