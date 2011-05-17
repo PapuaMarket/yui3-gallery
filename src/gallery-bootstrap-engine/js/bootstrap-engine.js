@@ -55,9 +55,9 @@ Y.mix(BootstrapEngine, {
     ATTRS: {
         /**
          * @attribute container
-         * @type {String}
+         * @type {Selector|Node}
          * @writeOnce
-         * @description selector for the iframe's container. This is relative to the parent document.
+         * @description selector or node for the iframe's container. This is relative to the parent document.
          */
         container: {
              getter: function (v) {
@@ -112,9 +112,9 @@ Y.extend(BootstrapEngine, Y.Base, {
             doc: parent.window.document
         }).use('node', function( HOST ) {
             // finishing the initialization process async to facilitate 
-            // addons to hook into _init/_bind if needed.
+            // addons to hook into _boot/_init/_bind/_ready if needed.
             Y.later(0, instance, function() {
-                instance._init();
+                instance._boot();
             });
         }));
     },
@@ -123,20 +123,25 @@ Y.extend(BootstrapEngine, Y.Base, {
      * Basic initialization routine, styling the iframe, binding events and
      * connecting the bootstrap engine with the injection engine.
      *
-     * @method _bind
+     * @method _boot
      * @protected
      */
-    _init: function () {
-        var instance = this;
-        Y.log ('Init', 'info', 'bootstrap');
+    _boot: function () {
+        var instance = this,
+            ready;
+        Y.log ('Boot', 'info', 'bootstrap');
         // connecting with the injection engine before doing anything else
-        instance._connect();
+        ready = instance._connect();
         // adjust the iframe container in preparation for the first display action
         instance._styleIframe();
+        // create some objects and markup
+        instance._init();
         // binding some extra events
         instance._bind();
-        // connecting the bootstrap with the injection engine
-        instance._ready();
+        if (ready) {
+            // connecting the bootstrap with the injection engine
+            instance._ready();        
+        }
     },
 
     /**
@@ -150,20 +155,31 @@ Y.extend(BootstrapEngine, Y.Base, {
     _connect: function () {
         var instance = this,
             guid = Y.config.guid, // injection engine guid value
+            pwin = instance.get(ATTR_HOST).config.win,
             // getting a reference to the parent window callback function to notify
             // to the injection engine that the bootstrap is ready
-            callback = instance.get(ATTR_HOST).config.win.YUI.Env[guid];
-        Y.log ('Connecting with injection engine', 'info', 'bootstrap');
-        // connecting bootstrap with the injection engines
-        if (callback) {
-            callback (instance);
-        }
+            callback = guid && pwin && pwin.YUI && pwin.YUI.Env[guid];
+
         Y.log ('Bootstrap connect', 'info', 'bootstrap');
+        // connecting bootstrap with the injection engines
+        return ( callback ? callback ( instance ) : false );
+    },
+
+    /**
+     * Basic initialization routine, usually to create markup, new objects and attributes, etc.
+     * Overrides/Extends this prototype method to do your mojo.
+     *
+     * @method _init
+     * @protected
+     */
+    _init: function () {
+        Y.log ('Init bootstrap', 'info', 'bootstrap');
     },
 
     /**
      * Defines the binding logic for the bootstrap engine, listening for some attributes 
      * that might change, and defining the set of events that can be exposed to the injection engine.
+     * Overrides/Extends this prototype method to do your mojo.
      *
      * @method _bind
      * @protected
@@ -173,6 +189,10 @@ Y.extend(BootstrapEngine, Y.Base, {
     },
 
     /**
+     * This method will be called only if the connect response with "true", you can use this
+     * to control the state of the initialization from the injection engine since it might 
+     * take some time to load the stuff in the iframe, and the user might interact with the page
+     * invalidating the initialization routine.
      * Overrides/Extends this prototype method to do your mojo.
      *
      * @method _ready
