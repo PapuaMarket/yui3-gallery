@@ -31,7 +31,8 @@ function _doesItFit(node, conf) {
 }
 
 function _computeLineHeight(node) {
-    var lh = node.getComputedStyle('lineHeight');                                                                           
+    // forcing to fallback to regular style when IE fails to compute the style
+    var lh = node.getComputedStyle('lineHeight') || node.getStyle('lineHeight');
     // this is assuming the computed lineHeight will return px or numeric value that represent "em".
     return ( lh.indexOf('px') > 0 ? parseInt(lh, 10) : parseInt(lh, 10) * parseInt(node.getComputedStyle('fontSize'), 10) );
 }
@@ -93,8 +94,9 @@ Y.DOM.fit = function (node, conf) {
         skip: 'em',
         lh: _computeLineHeight(n)
     });
-
-    if (!_doesItFit(n, conf)) {
+    // if we are unable to compute the line-height, then there is not point to 
+    // try to truncate, instead it will ended up removing the whole block, bypassing if config.lh is not a valid number
+    if (Y.Lang.isValue(conf.lh) && !_doesItFit(n, conf)) {
 
         nodes = n.all('>*');
         // if there are not child elements, we use the a single item nodelist
