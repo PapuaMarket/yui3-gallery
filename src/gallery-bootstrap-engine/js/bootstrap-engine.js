@@ -212,15 +212,11 @@ Y.extend(BootstrapEngine, Y.Base, {
       * @protected
       */
      _styleIframe: function () {
-         var optimizedName = 'setAttribute',
-             iframe = this.get('iframe'); // TODO: this have to be in a lang bundle
+         var iframe = this.get('iframe'); // TODO: this have to be in a lang bundle
          Y.log ('Styling the iframe', 'info', 'bootstrap');
-         Y.each (['border', 'frameBorder', 'marginWidth', 'marginHeight', 'leftMargin', 'topMargin'], function (name) {
-             iframe[optimizedName](name, 0);
+         Y.each (['border', 'marginWidth', 'marginHeight', 'leftMargin', 'topMargin'], function (name) {
+             iframe.setAttribute(name, 0);
          });
-         // this is equivalent to: iframe.setAttribute('foo', 'bar').setAttribute('more', 'chaining'); but 
-         // since we don't have setAttributes, we do this crazy stuff to gain some bytes with the compressor.
-         iframe[optimizedName]('allowTransparency', "true");
      }
 
 });
