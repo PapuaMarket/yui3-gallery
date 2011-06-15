@@ -34,7 +34,7 @@ function _computeLineHeight(node) {
     // forcing to fallback to regular style when IE fails to compute the style
     var lh = node.getComputedStyle('lineHeight') || node.getStyle('lineHeight');
     // this is assuming the computed lineHeight will return px or numeric value that represent "em".
-    return ( lh.indexOf('px') > 0 ? parseInt(lh, 10) : parseInt(lh, 10) * parseInt(node.getComputedStyle('fontSize'), 10) );
+    return ( lh.indexOf('px') > 0 ? parseFloat(lh, 10) : parseFloat(lh, 10) * parseFloat(node.getComputedStyle('fontSize'), 10) );
 }
 
 function _tryToRemove (container, node, conf) {
