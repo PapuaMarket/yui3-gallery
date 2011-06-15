@@ -223,6 +223,7 @@ YUI({
                 if (Y.one('iframe')) {
                     Y.one('iframe').remove();
                 }
+                Y.one('#demo').setContent('');
             },
 
             //---------------------------------------------------------------------
@@ -323,6 +324,34 @@ YUI({
                 Assert.isNull(this.obj._testFullURL({}), 'The URL detection method fails: Objects without the url property should not match.');
                 Assert.isNull(this.obj._testFullURL({url:''}), 'The URL detection method fails: Objects with empty url, null or undefined should not match.');
                 Assert.isObject(this.obj._testFullURL({url:'j'}), 'The URL detection method fails: Objects with url attribute should be preserved.');
+            },
+
+            "test preload default feature": function() {
+                var demo = Y.one('#demo');
+                this.obj = new Y.InjectionEngine({
+                    css: dummyCSS,
+                    js: ["function(){}", dummyJS],
+                    container: '#demo'
+                });
+                Assert.isObject(this.obj.preload(), 'preload should support chaining.');
+                if (!Y.UA.ie) {
+                    // for non-ie browsers lets test the amount of objects
+                    Assert.areEqual(2, demo.all('object').size(), 'for non-ie browsers object tags should be created to do the preload.');
+                }
+            },
+
+            "test preload custom feature": function() {
+                var demo = Y.one('#demo');
+                this.obj = new Y.InjectionEngine({
+                    css: dummyCSS,
+                    js: ["function(){}", dummyJS],
+                    container: '#demo'
+                });
+                Assert.isObject(this.obj.preload(dummyJS), 'preload should support chaining.');
+                if (!Y.UA.ie) {
+                    // for non-ie browsers lets test the amount of objects
+                    Assert.areEqual(1, demo.all('object').size(), 'Custom parameters should bypass default preloading to honor the custom arguments.');
+                }
             }
 
         }));

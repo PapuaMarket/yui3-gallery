@@ -199,6 +199,45 @@ Y.extend(InjectionEngine, Y.Base, {
     },
 
     /**
+     * Preload any asset before the boot process. Good for performance. By default it will 
+     * preload the css and js files produced by those attributes.
+     *
+     * @method preload
+     * @param files {string|array} custom files to preload. If specified, it will not load the default ones.
+     * @return this for chaining
+     */
+    preload: function (files) {
+        var instance = this,
+            node = instance.get('container'),
+            ie = Y.UA.ie,
+            fn = function (f) {
+                if ((f = instance._testFullURL(f)) && (f = f.url)) {
+                    Y.log("Preloading asset: " + f, "info", "injection");
+                    if (ie) {
+                        (new Image()).src = f;
+                    } else {
+                        node.append('<object data="'+f+'" width="0" tabindex="-1" height="0" style="display:none;left:-9999px;position:absolute;"></object>');
+                    }
+                }
+            };
+
+        Y.log ('method: preload', 'info', 'injection');
+
+        files = ( Y.Lang.isArray(files) ? files : Y.Array(arguments, 0, true));
+
+        if (files.length > 0) {
+            Y.log("Preloading custom assets (arguments):", "info", "injection");
+            Y.each(files, fn);
+        } else {
+            Y.log("Preloading JS assets:", "info", "injection");
+            Y.each(instance.get('js'), fn);
+            Y.log("Preloading CSS assets:", "info", "injection");
+            Y.each(instance.get('css'), fn);
+        }
+        return instance;
+    },
+
+    /**
      * Boot the system, creating the sandbox, injecting the css and the js into the iframe, 
      * waiting for the bootstrap to gets ready, then continueing with the workflow.
      *
@@ -206,9 +245,10 @@ Y.extend(InjectionEngine, Y.Base, {
      * @return this for chaining
      */
     boot: function () {
+        var instance = this;
         Y.log ('Boot', 'info', 'injection');
-        this._createSandbox ( config );
-        return this; // chaining on public methods
+        instance._createSandbox ( config );
+        return instance; // chaining on public methods
     },
 
     /**
@@ -251,6 +291,12 @@ Y.extend(InjectionEngine, Y.Base, {
                 bootstrap.on(ev.name, Y.bind( instance._onEvent, instance, ev ));
             }
         });
+
+        // removing the preload placeholders if needed
+        if (!Y.UA.ie) {
+            Y.log('Removing pre-load placeholders: ' + instance.get('container').all('object'), 'info', 'ura-injection');
+            instance.get('container').all('object').remove();
+        }
 
         Y.log('Bootstrap is ready.', 'info', 'injection');
         return this._ready();
@@ -360,7 +406,7 @@ Y.extend(InjectionEngine, Y.Base, {
      */
     _buildBody: function (config) {
         var b = [(config.html ? config.html : '<br>')],
-            J = Y.JSON || JSON,
+            J = Y.JSON || (Y.config.win || {}).JSON,
             yui_config;
 
         // global_yui_config will be transformed into a custom YUI_config object as part of the iframe body, but 
@@ -372,7 +418,7 @@ Y.extend(InjectionEngine, Y.Base, {
         } else {
         // if JSON is not available, we will create a minimum required configuration using string only
             yui_config = [];
-            Y.each (Y.Array.keys(custom_yui_config), function (name) {
+            Y.each (Y.Object.keys(custom_yui_config), function (name) {
                 yui_config.push( name + ':"' +  custom_yui_config[name] + '"');
             });
             yui_config = '{' + yui_config.join(',') + '}';
@@ -393,7 +439,7 @@ Y.extend(InjectionEngine, Y.Base, {
      */
     _createSandbox: function (config) {
         var instance = this,
-            iframe = Y.Node.create('<iframe></iframe>'),
+            iframe = Y.Node.create('<iframe frameborder="0"></iframe>'),
             container = instance.get('container'),
             CSS = instance.get('css'),
             JS = instance.get('js'),
