@@ -396,6 +396,19 @@ Y.extend(InjectionEngine, Y.Base, {
     },
 
     /**
+     * Build the basic YUI_config object that will injected in the iframe to boot based on those configs. 
+     * Keep in mind that all the other configs will be injected into the bootstrap once it boots.
+     * At this point, only guid and lang are required.
+     *
+     * @method _buildCfg
+     * @protected
+     * @return {Object} Literal object with the basic YUI_config.
+     */
+    _buildCfg: function () {
+        return custom_yui_config;
+    },
+
+    /**
      * Build the basic html content for the iframe's body. By default, it adds the required YUI_config structure.
      * If JSON is available, the custom yui config and the global yui config will be mixed and stringified.
      *
@@ -407,7 +420,8 @@ Y.extend(InjectionEngine, Y.Base, {
     _buildBody: function (config) {
         var b = [(config.html ? config.html : '<br>')],
             J = Y.JSON || (Y.config.win || {}).JSON,
-            yui_config;
+            ycfg = this._buildCfg(),
+            yui_config = [];
 
         // global_yui_config will be transformed into a custom YUI_config object as part of the iframe body, but 
         // it requires JSON to stringify the configuration. Since this is usually a debug trick, we 
@@ -418,8 +432,8 @@ Y.extend(InjectionEngine, Y.Base, {
         } else {
         // if JSON is not available, we will create a minimum required configuration using string only
             yui_config = [];
-            Y.each (Y.Object.keys(custom_yui_config), function (name) {
-                yui_config.push( name + ':"' +  custom_yui_config[name] + '"');
+            Y.each (Y.Object.keys(ycfg), function (name) {
+                yui_config.push( name + ':"' +  ycfg[name] + '"');
             });
             yui_config = '{' + yui_config.join(',') + '}';
         }
