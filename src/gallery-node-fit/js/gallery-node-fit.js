@@ -90,14 +90,20 @@ Y.DOM.fit = function (node, conf) {
     // augment our conf object with some default settings
     Y.mix(conf, {
         // end marker
-        ellipsis : '...',
+        // use nonbreaking space and ellipsis entities for Style Guide compliance:
+        // http://styleguide.yahoo.com/editing/punctuate-proficiently/ellipsis-points
+        // entities are used in order to prevent trouble caused by
+        // anyone editing source code with a non-Unicode editor
+        ellipsis : Y.Node.create('<span>&nbsp;&hellip;</span>').get('text'),
         skip: 'em',
         lh: _computeLineHeight(n)
     });
     // if we are unable to compute the line-height, then there is not point to 
     // try to truncate, instead it will ended up removing the whole block, bypassing if config.lh is not a valid number
     if (Y.Lang.isValue(conf.lh) && !_doesItFit(n, conf)) {
-
+        // save the text to the title
+        n.set('title', n.get('text'));
+        
         nodes = n.all('>*');
         // if there are not child elements, we use the a single item nodelist
         if (nodes.isEmpty()) {
