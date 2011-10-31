@@ -182,6 +182,7 @@ Y.extend(BootstrapEngine, Y.Base, {
         if (auto) {
             // connecting the bootstrap with the injection engine
             instance._ready();
+            instance._ready();        
         }
         // marking the system as ready
         instance._set('ready', true);
