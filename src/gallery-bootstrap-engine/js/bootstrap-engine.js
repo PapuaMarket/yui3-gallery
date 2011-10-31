@@ -140,7 +140,9 @@ Y.extend(BootstrapEngine, Y.Base, {
 
         Y.log ('Initialization', 'info', 'bootstrap');
         // parent is optional to facilitate testing and headless execution
-        if (parent && win && doc) {
+        // for some reason, if there is not parent window, it points to the current page, weird, but
+        // we can solve this by comparing the win objects to be sure...
+        if (parent && win && doc && (win !== Y.config.win)) {
             host = YUI({
                 bootstrap: false,
                 win: win,
@@ -179,7 +181,7 @@ Y.extend(BootstrapEngine, Y.Base, {
         // if the connect process wants to automatically execute the _ready, it should returns true.
         if (auto) {
             // connecting the bootstrap with the injection engine
-            instance._ready();        
+            instance._ready();
         }
         // marking the system as ready
         instance._set('ready', true);
