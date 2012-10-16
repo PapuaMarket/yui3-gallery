@@ -5,7 +5,7 @@
  */
 
 /**
- * Return a DOM Fragment with the dom structure selected by the user to 
+ * Return a DOM Fragment with the dom structure selected by the user to
  * facilitate the analysis of that fragment.
  * E.g., Y.getSelection().all('p').size() will give you the number of paragraphs
  * selected by the user.
@@ -14,15 +14,16 @@
  */
 
 /*
- * All the credit for Dav Glass (@davglass), since he has provided the whole chunk of code, 
- * I just did the monkey work.
+ * All the credit for Dav Glass (@davglass), since he has provided
+ * the whole chunk of code, I just did the monkey work.
  */
-Y.getSelection = function() {
+Y.getSelection = function () {
     var sel,
         frag;
 
     if (Y.config.win.getSelection) {
-        sel = Y.config.win.getSelection().getRangeAt(0);
+        sel = Y.config.win.getSelection();
+        sel = sel && sel.getRangeAt(0);
     } else if (Y.config.doc.selection) {
         sel = Y.config.doc.selection.createRange();
     }
