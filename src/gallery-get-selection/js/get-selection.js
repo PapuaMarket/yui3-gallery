@@ -19,18 +19,21 @@
  */
 Y.getSelection = function () {
     var sel,
+        winsel,
         frag;
 
     if (Y.config.win.getSelection) {
-        sel = Y.config.win.getSelection();
-        sel = sel && sel.getRangeAt(0);
+        winsel = Y.config.win.getSelection();
+        if (winsel.rangeCount > 0) {
+            sel = winsel.getRangeAt(0);
+        }
     } else if (Y.config.doc.selection) {
         sel = Y.config.doc.selection.createRange();
     }
 
-    if (sel.cloneContents) {
+    if (sel && sel.cloneContents) {
         frag = sel.cloneContents();
-    } else if (sel.htmlText) {
+    } else if (sel && sel.htmlText) {
         frag = Y.Node.create(sel.htmlText);
     }
 
