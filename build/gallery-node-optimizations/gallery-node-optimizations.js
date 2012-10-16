@@ -3,16 +3,39 @@ YUI.add('gallery-node-optimizations', function(Y) {
 "use strict";
 
 /**
+ * @module gallery-node-optimizations
+ */
+
+/**
  * Optimizations for searching DOM tree.
  *
- * @module node
- * @submodule gallery-node-optimizations
+ * @main gallery-node-optimizations
  * @class Node~optimizations
  */
 
 var tag_class_name_re = /^([a-z]*)\.([-_a-z0-9]+)$/i;
 var class_name_re     = /^\.([-_a-z0-9]+)$/i;
 var tag_name_re       = /^[a-z]+$/i;
+
+/**
+ * Useful when constructing regular expressions that match CSS classes.
+ *
+ * @property class_re_prefix
+ * @static
+ * @type {String}
+ * @value "(?:^|\\s)(?:"
+ */
+Y.Node.class_re_prefix = '(?:^|\\s)(?:';
+
+/**
+ * Useful when constructing regular expressions that match CSS classes.
+ *
+ * @property class_re_suffix
+ * @static
+ * @type {String}
+ * @value ")(?:\\s|$)"
+ */
+Y.Node.class_re_suffix = ')(?:\\s|$)';
 
 /**********************************************************************
  * <p>Patch to speed up search for a single class name or single tag name.
@@ -73,7 +96,7 @@ Y.Node.prototype.getAncestorByClassName = function(
 		e = e.parentNode;
 		if (!e || !e.tagName)
 		{
-			return null;	// might be hidden, which is outside <fieldset>
+			return null;
 		}
 	}
 	return Y.one(e);
@@ -105,26 +128,59 @@ Y.Node.prototype.getAncestorByTagName = function(
 		e = e.parentNode;
 		if (!e || !e.tagName)
 		{
-			return null;	// might be hidden, which is outside <fieldset>
+			return null;
 		}
 	}
 	return Y.one(e);
 };
 
-/**********************************************************************
+/*
+ * <p>Patch to speed up search for a single class name or single tag name.
+ * To use a regular expression, call getElementsByClassName().</p>
+ * 
+ * @method one
+ * @param fn {String|Function} selector string or boolean method for testing elements
+ * @return {Node}
+ */
+/*
+var orig_one = Y.Node.prototype.one;
+
+Y.Node.prototype.one = function(selector)
+{
+	if (Y.Lang.isString(selector))
+	{
+		if (selector == '*')
+		{
+			return Y.one(Y.Node.getDOMNode(this).children[0]);
+		}
+
+		var m = tag_class_name_re.exec(selector);
+		if (m && m.length)
+		{
+			return this.getFirstElementByClassName(m[2], m[1]);
+		}
+
+		if (tag_name_re.test(selector))
+		{
+			return this.getElementsByTagName(selector).item(0);
+		}
+	}
+
+	return orig_one.apply(this, arguments);
+};
+*/
+/*
  * <p>Patch to speed up search for a single class name or single tag name.
  * To use a regular expression, call getElementsByClassName().</p>
  * 
  * @method all
  * @param fn {String|Function} selector string or boolean method for testing elements
- * @param test_self {Boolean} pass true to include the element itself in the scan
  * @return {Node}
  */
-
+/*
 var orig_all = Y.Node.prototype.all;
 
-Y.Node.prototype.all = function(
-	/* string */ selector)
+Y.Node.prototype.all = function(selector)
 {
 	if (Y.Lang.isString(selector))
 	{
@@ -142,7 +198,7 @@ Y.Node.prototype.all = function(
 
 	return orig_all.apply(this, arguments);
 };
-
+*/
 /**********************************************************************
  * <p>Searches for descendants by class name.  Unlike Y.all(), this
  * function accepts a regular expression.</p>
@@ -157,33 +213,78 @@ Y.Node.prototype.getElementsByClassName = function(
 	/* string */	class_name,
 	/* string */	tag_name)
 {
-	var descendants = this.getElementsByTagName(tag_name || '*');
+	var descendants = Y.Node.getDOMNode(this).getElementsByTagName(tag_name || '*');
 
-	var list  = null;
-	var count = descendants.size();
-	for (var i=0; i<count; i++)
+	var list = new Y.NodeList();
+	for (var i=0; i<descendants.length; i++)
 	{
-		var e = descendants.item(i);
-		if (Y.DOM.hasClass(Y.Node.getDOMNode(e), class_name))
+		var e = descendants[i];
+		if (Y.DOM.hasClass(e, class_name))
 		{
-			if (!list)
-			{
-				list = new Y.NodeList(e);	// can't construct empty list
-			}
-			else
-			{
-				list.push(e);
-			}
+			list.push(e);
 		}
-	}
-
-	if (!list)	// can't construct empty list
-	{
-		list = new Y.NodeList('#surely-this-cannot-possibly-exist-on-your-page');
 	}
 
 	return list;
 };
 
+/**********************************************************************
+ * <p>Searches for one descendant by class name.  Unlike Y.one(), this
+ * function accepts a regular expression.  </p>
+ * 
+ * @method getFirstElementByClassName
+ * @param class_name {String|Regexp} class to search for
+ * @param tag_name {String} optional tag name to filter by
+ * @return {Node}
+ */
 
-}, 'gallery-2011.08.24-23-44' ,{requires:['node-base']});
+Y.Node.prototype.getFirstElementByClassName = function(
+	/* string */	class_name,
+	/* string */	tag_name)
+{
+	if (!tag_name || tag_name == '*' || tag_name == 'div')
+	{
+		// breadth first search
+
+		var list1 = [ Y.Node.getDOMNode(this) ], list2 = [];
+		while (list1.length)
+		{
+			for (var i=0; i<list1.length; i++)
+			{
+				var root     = list1[i],
+					children = root.children || root.childNodes;	// svg elements only have childNodes
+				for (var j=0; j<children.length; j++)
+				{
+					var e = children[j];
+					if (Y.DOM.hasClass(e, class_name))
+					{
+						return Y.one(e);
+					}
+
+					list2.push(e);
+				}
+			}
+
+			list1 = list2;
+			list2 = [];
+		}
+	}
+	else
+	{
+		var descendants = Y.Node.getDOMNode(this).getElementsByTagName(tag_name || '*');
+
+		for (var i=0; i<descendants.length; i++)
+		{
+			var e = descendants[i];
+			if (Y.DOM.hasClass(e, class_name))
+			{
+				return Y.one(e);
+			}
+		}
+	}
+
+	return null;
+};
+
+
+}, 'gallery-2012.06.27-20-10' ,{requires:['node-base']});

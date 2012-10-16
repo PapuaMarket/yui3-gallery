@@ -10,7 +10,7 @@ var fs      = require('fs'),
 
 // *** Collection *** //
 
-Collection = function () {
+function Collection() {
     this._lastId = 0;
     this.items   = {};
 };
@@ -69,6 +69,10 @@ app.configure(function(){
     app.use(express.bodyParser());
     // Handles requests which use POST instead of PUT or DELETE.
     app.use(express.methodOverride());
+
+    app.use(express.cookieParser());
+    app.use(express.session({secret: 'bla bla'}));
+    app.use(express.csrf());
 });
 
 // YUI 3 combo handler.
@@ -79,6 +83,11 @@ app.get('/yui3', combo.combine({ rootPath: yui3Path }), function (req, res) {
 // YUI 3 Gallery combo handler.
 app.get('/yui3-gallery', combo.combine({ rootPath: yui3GalleryPath }), function (req, res) {
     res.send(res.body, 200);
+});
+
+app.all('*', function (req, res, next) {
+    console.log(req.session._csrf);
+    next();
 });
 
 // Lookup the data collection and set it on the request object and continue.
@@ -99,8 +108,8 @@ app.post('/data/:collection', function (req, res) {
 // Lookup specific item on a collection and set it on the request then continue,
 // or error out with a 404.
 app.all('/data/:collection/:id', function (req, res, next) {
-    var id      = req.params.id,
-        item    = req.collection.item(id);
+    var id   = req.params.id,
+        item = req.collection.item(id);
 
     if (item) {
         req.item = item;

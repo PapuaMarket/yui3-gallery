@@ -8,7 +8,6 @@ YUI.add('gallery-slidecheckbox', function(Y) {
 	LABELON = 'labelOn',
 	LABELOFF = 'labelOff',
 	HANDLE = 'handle';
-	;
 	
 	Y[SLIDECHECKBOX] = Y.Base.create(
 	SLIDECHECKBOX,
@@ -24,16 +23,16 @@ YUI.add('gallery-slidecheckbox', function(Y) {
 				
 				this._locateNodes();
 
-				var leftX = this._labelOnNode.one('span').get('offsetWidth'),
-				rightX = this._labelOffNode.one('span').get('offsetWidth'), 
+				var leftX = this._labelOnNode.one('div').get('offsetWidth'),
+				rightX = this._labelOffNode.one('div').get('offsetWidth'), 
 				width = this._labelOnNode.get('offsetWidth'),
 				skin = this.getSkinName(),
 				ios5 = skin? skin.indexOf('ios5') > -1 : null;
 
 				if(leftX > rightX){
-					this._labelOffNode.one('span').setStyle('width',leftX);
+					this._labelOffNode.one('div').setStyle('width',leftX);
 				}else{
-					this._labelOnNode.one('span').setStyle('width',rightX);
+					this._labelOnNode.one('div').setStyle('width',rightX);
 					width = this._labelOnNode.get('offsetWidth');
 				}
 				
@@ -86,7 +85,10 @@ YUI.add('gallery-slidecheckbox', function(Y) {
 				cb.on('focus',function(){
 					cb.on('key',this.goLeft,'down:37',this);
 					cb.on('key',this.goRight,'down:39',this);
-					cb.on('key',this.move,'down:32',this);
+					cb.on('key',function(e){
+						e.preventDefault();
+						this.move();
+					},'down:32',this);
 				},this);
 				cb.on('blur',function(){
 					cb.detach('key');
@@ -141,14 +143,15 @@ YUI.add('gallery-slidecheckbox', function(Y) {
 				return null;
 			},
 			_onClick : function(e){
+				e.preventDefault();
 				this.move();
 			},
 			_execute : function(){
-				this.get(CBX).focus();
+				this.focus();
 				if(this.disabled){
 					return;
 				}
-
+				this.src.set('checked',!this.src.get('checked'));
 				if(this.anim === null){
 					this.anim = new Y.Anim({
 						node: this._sliderwrapNode,
@@ -162,7 +165,8 @@ YUI.add('gallery-slidecheckbox', function(Y) {
 				this.anim.set('from',{left:(this.from? this.from : this.baseX)});
 				this.anim.set('to',{left:this.to});
 				this.anim.run();
-				this.src.set('checked',!this.src.get('checked'));
+
+				Y.log("New value: " + this.src.get('checked'));
 			},
 			_replacePx : function(el){
 				return parseInt(el.replace('px',''));
@@ -182,9 +186,9 @@ YUI.add('gallery-slidecheckbox', function(Y) {
 			_TEMPLATE: [
 				'<div class="{c wrapper}"><span class="edge lt">&nbsp;</span><span class="edge rt">&nbsp;</span>',
 				'<div class="{c slider}"><div class="{c sliderwrap}">',
-				'<span class="{c labelOn}"><label><span>{s labelOn}</span></label></span>',
+				'<div class="{c labelOn}"><label><div>{s labelOn}</div></label></div>',
 				'<div class="{c handle}"><span class="edge lt">&nbsp;</span><span class="edge rt">&nbsp;</span></div>',
-				'<span class="{c labelOff}"><label><span>{s labelOff}</span></label></span>',
+				'<div class="{c labelOff}"><label><div>{s labelOff}</div></label></div>',
 				'</div></div></div>'
 			].join('\n'),
 			_EVENTS:{
@@ -201,4 +205,4 @@ YUI.add('gallery-slidecheckbox', function(Y) {
 	);
 
 
-}, 'gallery-2011.10.27-17-03' ,{skinnable:true, requires:['node-base', 'anim-base', 'anim-easing', 'base-build', 'event-key', 'event-move', 'widget', 'node-style', 'gallery-makenode', 'dd-drag', 'dd-constrain']});
+}, 'gallery-2012.05.09-20-27' ,{skinnable:true, requires:['node-base', 'anim-base', 'anim-easing', 'base-build', 'event-key', 'event-move', 'widget', 'node-style', 'gallery-makenode', 'dd-drag', 'dd-constrain']});

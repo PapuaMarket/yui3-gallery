@@ -24,10 +24,11 @@ YUI.add('gallery-bulkedit', function(Y) {
  * 
  * <p>The responseSchema passed to the YUI DataSource must include a
  * comparator for each field that should not be treated like a string.
- * This comparator can either be 'integer', 'decimal', or a function which
- * takes two arguments.</p>
+ * This comparator can either be 'string' (the default), 'integer',
+ * 'decimal', 'boolean', or a function which takes two arguments.</p>
  *
- * @class BulkEditDataSource
+ * @class BulkEdit
+ * @namespace DataSource
  * @extends DataSource.Local 
  * @constructor
  * @param config {Object}
@@ -42,11 +43,12 @@ BulkEditDataSource.NAME = "bulkEditDataSource";
 BulkEditDataSource.ATTRS =
 {
 	/**
-	 * REQUIRED. The original data.  This must be immutable, i.e., the
-	 * values must not change.
+	 * The original data.  This must be immutable, i.e., the values must
+	 * not change.
 	 * 
-	 * @config ds
+	 * @attribute ds
 	 * @type {DataSource}
+	 * @required
 	 * @writeonce
 	 */
 	ds:
@@ -55,12 +57,13 @@ BulkEditDataSource.ATTRS =
 	},
 
 	/**
-	 * REQUIRED.  The function to convert the initial request into a
-	 * request usable by the underlying DataSource.  This function takes
-	 * one argument: state (startIndex,resultCount,...).
+	 * The function to convert the initial request into a request usable by
+	 * the underlying DataSource.  This function takes one argument: state
+	 * (startIndex,resultCount,...).
 	 * 
-	 * @config generateRequest
+	 * @attribute generateRequest
 	 * @type {Function}
+	 * @required
 	 * @writeonce
 	 */
 	generateRequest:
@@ -70,11 +73,12 @@ BulkEditDataSource.ATTRS =
 	},
 
 	/**
-	 * REQUIRED. The name of the key in each record that stores an
-	 * identifier which is unique across the entire data set.
+	 * The name of the key in each record that stores an identifier which
+	 * is unique across the entire data set.
 	 * 
-	 * @config uniqueIdKey
+	 * @attribute uniqueIdKey
 	 * @type {String}
+	 * @required
 	 * @writeonce
 	 */
 	uniqueIdKey:
@@ -87,7 +91,7 @@ BulkEditDataSource.ATTRS =
 	 * The function to call to generate a unique id for a new record.  The
 	 * default generates "bulk-edit-new-id-#".
 	 * 
-	 * @config generateUniqueId
+	 * @attribute generateUniqueId
 	 * @type {Function}
 	 * @writeonce
 	 */
@@ -107,7 +111,7 @@ BulkEditDataSource.ATTRS =
 	 * received data, e.g., <code>.meta.startIndex</code>.  If it is not
 	 * provided, startIndex is always assumed to be zero.
 	 * 
-	 * @config startIndexExpr
+	 * @attribute startIndexExpr
 	 * @type {String}
 	 * @writeonce
 	 */
@@ -123,7 +127,7 @@ BulkEditDataSource.ATTRS =
 	 * only appropriate for DataSources that always return the entire data
 	 * set.
 	 * 
-	 * @config totalRecordsReturnExpr
+	 * @attribute totalRecordsReturnExpr
 	 * @type {String}
 	 * @writeonce
 	 */
@@ -134,11 +138,12 @@ BulkEditDataSource.ATTRS =
 	},
 
 	/**
-	 * REQUIRED. The function to call to extract the total number of
+	 * The function to call to extract the total number of
 	 * records from the response.
 	 * 
-	 * @config extractTotalRecords
+	 * @attribute extractTotalRecords
 	 * @type {Function}
+	 * @required
 	 * @writeonce
 	 */
 	extractTotalRecords:
@@ -422,8 +427,9 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	},
 
 	/**
-	 * @return {boolean} true if the raw data is stored locally
+	 * @method _dataIsLocal
 	 * @protected
+	 * @return {boolean} true if the raw data is stored locally
 	 */
 	_dataIsLocal: function()
 	{
@@ -433,6 +439,7 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	/**
 	 * Flush the underlying datasource's cache.
 	 * 
+	 * @method _flushCache
 	 * @protected
 	 */
 	_flushCache: function()
@@ -447,6 +454,7 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	/**
 	 * Use this instead of any meta information in response.
 	 * 
+	 * @method getRecordCount
 	 * @return {Number} the total number of records
 	 */
 	getRecordCount: function()
@@ -455,6 +463,7 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	},
 
 	/**
+	 * @method getCurrentRecords
 	 * @return {Number} the records returned by the latest request
 	 */
 	getCurrentRecords: function()
@@ -463,6 +472,7 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	},
 
 	/**
+	 * @method getCurrentRecordMap
 	 * @return {Object} the records returned by the latest request, keyed by record id
 	 */
 	getCurrentRecordMap: function()
@@ -471,6 +481,7 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	},
 
 	/**
+	 * @method getValue
 	 * @param record_index {Number}
 	 * @param key {String} field key
 	 * @return {mixed} the value of the specified field in the specified record
@@ -517,6 +528,7 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	 * When using a remote datasource, this will include changes made to
 	 * deleted records.
 	 * 
+	 * @method getChanges
 	 * @return {Object} map of all changed values, keyed by record id
 	 */
 	getChanges: function()
@@ -525,6 +537,7 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	},
 
 	/**
+	 * @method getRemovedRecordIndexes
 	 * @return {Array} list of removed record indices, based on initial ordering
 	 */
 	getRemovedRecordIndexes: function()
@@ -544,10 +557,11 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	/**
 	 * You must reload() the widget after calling this function!
 	 * 
+	 * @method insertRecord
+	 * @protected
 	 * @param index {Number} insertion index
 	 * @param record {Object|String} record to insert or id of record to clone
 	 * @return {String} id of newly inserted record
-	 * @protected
 	 */
 	insertRecord: function(
 		/* int */		index,
@@ -597,9 +611,10 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	/**
 	 * You must reload() the widget after calling this function!
 	 * 
+	 * @method removeRecord
+	 * @protected
 	 * @param index {Number} index of record to remove
 	 * @return {boolean} true if record was removed
-	 * @protected
 	 */
 	removeRecord: function(
 		/* int */ index)
@@ -639,10 +654,11 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	/**
 	 * Update a value in a record.
 	 *
+	 * @method updateValue
+	 * @protected
 	 * @param record_id {String}
 	 * @param key {String} field key
 	 * @param value {String} new item value
-	 * @protected
 	 */
 	updateValue: function(
 		/* string */	record_id,
@@ -657,7 +673,7 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 		record_id = record_id.toString();
 
 		var record = this._recordMap[ record_id ];
-		if (record && this._getComparator(key)(record[key] || '', value || ''))
+		if (record && this._getComparator(key)(Y.Lang.isValue(record[key]) ? record[key] : '', Y.Lang.isValue(value) ? value : ''))
 		{
 			if (this._diff[ record_id ])
 			{
@@ -675,9 +691,10 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	},
 
 	/**
+	 * @method _getComparator
+	 * @protected
 	 * @param key {String} field key
 	 * @return {Function} comparator function for the given field
-	 * @protected
 	 */
 	_getComparator: function(
 		/* string */ key)
@@ -702,6 +719,7 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	 * Only usable with DataSource.Local.  When using best-effort save on
 	 * the server, call this for each record that was successfully saved.
 	 *
+	 * @method mergeChanges
 	 * @param record_id {String}
 	 */
 	mergeChanges: function(
@@ -763,6 +781,7 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	 * 
 	 * <p>You must reload() the widget after calling this function!</p>
 	 * 
+	 * @method killRecord
 	 * @param record_id {String}
 	 */
 	killRecord: function(
@@ -844,6 +863,7 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	 * 
 	 * <p>You must reload() the widget after calling this function!</p>
 	 * 
+	 * @method updateRecordId
 	 * @param orig_record_id {String}
 	 * @param new_record_id {String}
 	 */
@@ -914,6 +934,7 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	 * Find the index of the given record id.  Only usable with
 	 * DataSource.Local.
 	 * 
+	 * @method recordIdToIndex
 	 * @param record_id {String}
 	 * @return {Number} index or record or -1 if not found
 	 */
@@ -959,6 +980,7 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 	/**
 	 * Merges edits into data and returns result.
 	 * 
+	 * @method _defRequestFn
 	 * @protected
 	 */
 	_defRequestFn: function(e)
@@ -984,10 +1006,12 @@ Y.extend(BulkEditDataSource, Y.DataSource.Local,
 });
 
 Y.BulkEditDataSource = BulkEditDataSource;
+Y.namespace('DataSource').BulkEdit = BulkEditDataSource;
 /**********************************************************************
  * A widget for editing many records at once.
  *
  * @module gallery-bulkedit
+ * @main gallery-bulkedit
  */
 
 /**
@@ -1020,8 +1044,9 @@ BulkEditor.NAME = "bulkedit";
 BulkEditor.ATTRS =
 {
 	/**
-	 * @config ds
-	 * @type {BulkEditDataSource}
+	 * @attribute ds
+	 * @type {DataSource.BulkEdit}
+	 * @required
 	 * @writeonce
 	 */
 	ds:
@@ -1039,8 +1064,9 @@ BulkEditor.ATTRS =
 	 * gallery-formmgr-css-validation).  Derived classes can require
 	 * additional keys.
 	 *
-	 * @config fields
+	 * @attribute fields
 	 * @type {Object}
+	 * @required
 	 * @writeonce
 	 */
 	fields:
@@ -1054,7 +1080,7 @@ BulkEditor.ATTRS =
 	 * expects it to be configured to display ValidationPageLinks, so the
 	 * user can see which pages have errors that need to be fixed.
 	 *
-	 * @config paginator
+	 * @attribute paginator
 	 * @type {Paginator}
 	 * @writeonce
 	 */
@@ -1070,7 +1096,7 @@ BulkEditor.ATTRS =
 	/**
 	 * Extra key/value pairs to pass in the DataSource request.
 	 * 
-	 * @config requestExtra
+	 * @attribute requestExtra
 	 * @type {Object}
 	 * @writeonce
 	 */
@@ -1084,7 +1110,7 @@ BulkEditor.ATTRS =
 	/**
 	 * CSS class used to temporarily highlight a record.
 	 *
-	 * @config pingClass
+	 * @attribute pingClass
 	 * @type {String}
 	 * @default "yui3-bulkedit-ping"
 	 */
@@ -1097,7 +1123,7 @@ BulkEditor.ATTRS =
 	/**
 	 * Duration in seconds that pingClass is applied to a record.
 	 *
-	 * @config pingTimeout
+	 * @attribute pingTimeout
 	 * @type {Number}
 	 * @default 2
 	 */
@@ -1110,12 +1136,16 @@ BulkEditor.ATTRS =
 
 /**
  * @event notifyErrors
- * @description Fires when widget-level validation messages need to be displayed.
+ * @description Fired when widget-level validation messages need to be displayed.
  * @param msgs {Array} the messages to display
  */
 /**
  * @event clearErrorNotification
- * @description Fires when widget-level validation messages should be cleared.
+ * @description Fired when widget-level validation messages should be cleared.
+ */
+/**
+ * @event pageRendered
+ * @description Fired every time after the editor has rendered a page.
  */
 
 var default_page_size = 1e9,
@@ -1124,20 +1154,13 @@ var default_page_size = 1e9,
 	id_separator = '__',
 	id_regex = new RegExp('^' + id_prefix + id_separator + '(.+?)(?:' + id_separator + '(.+?))?$'),
 
-	field_container_class        = Y.ClassNameManager.getClassName(BulkEditor.NAME, 'field-container'),
-	field_container_class_prefix = field_container_class + '-',
-	field_class_prefix           = Y.ClassNameManager.getClassName(BulkEditor.NAME, 'field') + '-',
-
-	class_re_prefix = '(?:^|\\s)(?:',
-	class_re_suffix = ')(?:\\s|$)',
-
 	status_prefix  = 'bulkedit-has',
 	status_pattern = status_prefix + '([a-z]+)',
-	status_re      = new RegExp(class_re_prefix + status_pattern + class_re_suffix),
+	status_re      = new RegExp(Y.Node.class_re_prefix + status_pattern + Y.Node.class_re_suffix),
 
 	record_status_prefix  = 'bulkedit-hasrecord',
 	record_status_pattern = record_status_prefix + '([a-z]+)',
-	record_status_re      = new RegExp(class_re_prefix + record_status_pattern + class_re_suffix),
+	record_status_re      = new RegExp(Y.Node.class_re_prefix + record_status_pattern + Y.Node.class_re_suffix),
 
 	message_container_class = Y.ClassNameManager.getClassName(BulkEditor.NAME, 'message-text'),
 
@@ -1145,6 +1168,10 @@ var default_page_size = 1e9,
 
 BulkEditor.record_container_class     = Y.ClassNameManager.getClassName(BulkEditor.NAME, 'bd');
 BulkEditor.record_msg_container_class = Y.ClassNameManager.getClassName(BulkEditor.NAME, 'record-message-container');
+
+BulkEditor.field_container_class        = Y.ClassNameManager.getClassName(BulkEditor.NAME, 'field-container');
+BulkEditor.field_container_class_prefix = BulkEditor.field_container_class + '-';
+BulkEditor.field_class_prefix           = Y.ClassNameManager.getClassName(BulkEditor.NAME, 'field') + '-';
 
 function switchPage(state)
 {
@@ -1175,9 +1202,29 @@ Y.extend(BulkEditor, Y.Widget,
 		this.reload();
 	},
 
+	bindUI: function()
+	{
+		this._attachEvents(this.get('contentBox'));
+	},
+
+	/**
+	 * Attaches events to the container.
+	 *
+	 * @method _attachEvents
+	 * @param container {Node} node to which events should be attached
+	 * @protected
+	 */
+	_attachEvents: function(
+		/* node */	container)
+	{
+		Y.delegate('bulkeditor|click', handleCheckboxMultiselect, container, '.checkbox-multiselect input', this);
+	},
+
 	/**
 	 * Reloads the current page of records.  This will erase any changes
 	 * unsaved changes!
+	 * 
+	 * @method reload
 	 */
 	reload: function()
 	{
@@ -1230,18 +1277,42 @@ Y.extend(BulkEditor, Y.Widget,
 
 	/**
 	 * Save the modified values from the current page of records.
+	 * 
+	 * @method saveChanges
 	 */
 	saveChanges: function()
 	{
 		var ds      = this.get('ds');
 		var records = ds.getCurrentRecords();
 		var id_key  = ds.get('uniqueIdKey');
-		Y.Object.each(this.get('fields'), function(value, key)
+		Y.Object.each(this.get('fields'), function(field, key)
 		{
 			Y.Array.each(records, function(r)
 			{
-				var node = this.getFieldElement(r, key);
-				ds.updateValue(r[ id_key ], key, node.get('value'));
+				var node = this.getFieldElement(r, key),
+					tag  = node.get('tagName').toLowerCase(),
+					value;
+				if (tag == 'input' && node.get('type').toLowerCase() == 'checkbox')
+				{
+					value = node.get('checked') ? field.values.on : field.values.off;
+				}
+				else if (tag == 'select' && node.get('multiple'))
+				{
+					value = Y.reduce(Y.Node.getDOMNode(node).options, [], function(v, o)
+					{
+						if (o.selected)
+						{
+							v.push(o.value);
+						}
+						return v;
+					});
+				}
+				else
+				{
+					value = node.get('value');
+				}
+
+				ds.updateValue(r[ id_key ], key, value);
 			},
 			this);
 		},
@@ -1252,6 +1323,7 @@ Y.extend(BulkEditor, Y.Widget,
 	 * Retrieve *all* the data.  Do not call this if you use server-side
 	 * pagination.
 	 * 
+	 * @method getAllValues
 	 * @param callback {Object} callback object which will be invoked by DataSource
 	 */
 	getAllValues: function(callback)
@@ -1271,6 +1343,7 @@ Y.extend(BulkEditor, Y.Widget,
 	},
 
 	/**
+	 * @method getChanges
 	 * @return {Object} map of all changed values, keyed by record id
 	 */
 	getChanges: function()
@@ -1283,6 +1356,7 @@ Y.extend(BulkEditor, Y.Widget,
 	 * 
 	 * <p>You must reload() the widget after calling this function!</p>
 	 * 
+	 * @method insertRecord
 	 * @param index {Number} insertion index
 	 * @param record {Object|String} record to insert or id of record to clone
 	 * @return {String} the new record's id
@@ -1309,6 +1383,7 @@ Y.extend(BulkEditor, Y.Widget,
 	 * 
 	 * <p>You must reload() the widget after calling this function!</p>
 	 * 
+	 * @method removeRecord
 	 * @param index {Number}
 	 * @return {Boolean} true if the record was successfully removed
 	 */
@@ -1333,6 +1408,7 @@ Y.extend(BulkEditor, Y.Widget,
 	},
 
 	/**
+	 * @method getFieldConfig
 	 * @param key {String} field key
 	 * @return {Object} field configuration
 	 */
@@ -1343,6 +1419,7 @@ Y.extend(BulkEditor, Y.Widget,
 	},
 
 	/**
+	 * @method getRecordContainerId
 	 * @param record {String|Object} record id or record object
 	 * @return {String} id of DOM element containing the record's input elements
 	 */
@@ -1360,6 +1437,7 @@ Y.extend(BulkEditor, Y.Widget,
 	},
 
 	/**
+	 * @method getFieldId
 	 * @param record {String|Object} record id or record object
 	 * @param key {String} field key
 	 * @return {String} id of DOM element containing the field's input element
@@ -1372,6 +1450,7 @@ Y.extend(BulkEditor, Y.Widget,
 	},
 
 	/**
+	 * @method getRecordAndFieldKey
 	 * @param key {String|Node} field key or field input element
 	 * @return {Object} object containing record and field_key
 	 */
@@ -1386,13 +1465,14 @@ Y.extend(BulkEditor, Y.Widget,
 	},
 
 	/**
+	 * @method getRecordId
 	 * @param obj {Object|Node} record object, record container, or any node inside record container
 	 * @return {String} record id
 	 */
 	getRecordId: function(
 		/* object/element */	obj)
 	{
-		if (Y.Lang.isObject(obj) && !(obj instanceof Y.Node))
+		if (Y.Lang.isObject(obj) && !obj._node)
 		{
 			return obj[ this.get('ds').get('uniqueIdKey') ];
 		}
@@ -1409,6 +1489,7 @@ Y.extend(BulkEditor, Y.Widget,
 	},
 
 	/**
+	 * @method getRecordContainer
 	 * @param record {String|Object|Node} record id, record object, record container, or any node inside record container
 	 * @return {Node} node containing rendered record
 	 */
@@ -1419,7 +1500,7 @@ Y.extend(BulkEditor, Y.Widget,
 		{
 			var id = id_prefix + id_separator + record;
 		}
-		else if (record instanceof Y.Node)
+		else if (record && record._node)
 		{
 			return record.getAncestorByClassName(BulkEditor.record_container_class, true);
 		}
@@ -1432,6 +1513,7 @@ Y.extend(BulkEditor, Y.Widget,
 	},
 
 	/**
+	 * @method getFieldContainer
 	 * @param record {String|Object|Node} record id, record object, record container, or any node inside record container
 	 * @param key {String} field key
 	 * @return {Node} node containing rendered field
@@ -1441,10 +1523,11 @@ Y.extend(BulkEditor, Y.Widget,
 		/* string */				key)
 	{
 		var field = this.getFieldElement(record, key);
-		return field.getAncestorByClassName(field_container_class, true);
+		return field.getAncestorByClassName(BulkEditor.field_container_class, true);
 	},
 
 	/**
+	 * @method getFieldElement
 	 * @param record {String|Object|Node} record id, record object, record container, or any node inside record container
 	 * @param key {String} field key
 	 * @return {Node} field's input element
@@ -1453,7 +1536,7 @@ Y.extend(BulkEditor, Y.Widget,
 		/* string/object/element */	record,
 		/* string */				key)
 	{
-		if (record instanceof Y.Node)
+		if (record && record._node)
 		{
 			record = this.getRecordId(record);
 		}
@@ -1464,6 +1547,7 @@ Y.extend(BulkEditor, Y.Widget,
 	 * Paginate and/or scroll to make the specified record visible.  Record
 	 * is pinged to help the user find it.
 	 * 
+	 * @method showRecordIndex
 	 * @param index {Number} record index
 	 */
 	showRecordIndex: function(
@@ -1494,6 +1578,7 @@ Y.extend(BulkEditor, Y.Widget,
 	 * Paginate and/or scroll to make the specified record visible.  Record
 	 * is pinged to help the user find it.
 	 * 
+	 * @method showRecordId
 	 * @param id {Number} record id
 	 */
 	showRecordId: function(
@@ -1511,6 +1596,7 @@ Y.extend(BulkEditor, Y.Widget,
 	 * while.  Your CSS can use this class to highlight the record in some
 	 * way.
 	 * 
+	 * @method pingRecord
 	 * @param record {String|Object|Node} record id, record object, record container, or any node inside record container
 	 */
 	pingRecord: function(
@@ -1531,15 +1617,15 @@ Y.extend(BulkEditor, Y.Widget,
 	/**
 	 * Render the current page of records.
 	 *
-	 * @param response {Object} response from data source
+	 * @method _render
 	 * @protected
+	 * @param response {Object} response from data source
 	 */
 	_render: function(response)
 	{
 		Y.log('_render', 'debug');
 
 		var container = this.get('contentBox');
-		Y.Event.purgeElement(container);
 		this._renderContainer(container);
 		container.set('scrollTop', 0);
 		container.set('scrollLeft', 0);
@@ -1550,6 +1636,8 @@ Y.extend(BulkEditor, Y.Widget,
 			this._renderRecord(node, record);
 		},
 		this);
+
+		this.fire('pageRendered');
 
 		if (this.auto_validate)
 		{
@@ -1566,8 +1654,9 @@ Y.extend(BulkEditor, Y.Widget,
 	/**
 	 * Derived class should override to create a structure for the records.
 	 *
-	 * @param container {Node}
+	 * @method _renderContainer
 	 * @protected
+	 * @param container {Node}
 	 */
 	_renderContainer: function(
 		/* element */	container)
@@ -1578,9 +1667,10 @@ Y.extend(BulkEditor, Y.Widget,
 	/**
 	 * Derived class must override to create a container for the record.
 	 * 
+	 * @method _renderRecordContainer
+	 * @protected
 	 * @param container {Node}
 	 * @param record {Object} record data
-	 * @protected
 	 */
 	_renderRecordContainer: function(
 		/* element */	container,
@@ -1593,9 +1683,10 @@ Y.extend(BulkEditor, Y.Widget,
 	 * Derived class can override if it needs to do more than just call
 	 * _renderField() for each field.
 	 * 
+	 * @method _renderRecord
+	 * @protected
 	 * @param container {Node} record container
 	 * @param record {Object} record data
-	 * @protected
 	 */
 	_renderRecord: function(
 		/* element */	container,
@@ -1619,13 +1710,14 @@ Y.extend(BulkEditor, Y.Widget,
 	 * If _renderRecord is not overridden, derived class must override this
 	 * function to render the field.
 	 * 
+	 * @method _renderField
+	 * @protected
 	 * @param o {Object}
 	 *	container {Node} record container,
 	 *	key {String} field key,
 	 *	value {Mixed} field value,
 	 *	field {Object} field configuration,
 	 *	record {Object} record data
-	 * @protected
 	 */
 	_renderField: function(
 		/* object */ o)
@@ -1635,8 +1727,9 @@ Y.extend(BulkEditor, Y.Widget,
 	/**
 	 * Update the paginator to match the data source meta information.
 	 * 
-	 * @param response {Object} response from DataSource
+	 * @method _updatePaginator
 	 * @protected
+	 * @param response {Object} response from DataSource
 	 */
 	_updatePaginator: function(response)
 	{
@@ -1650,6 +1743,8 @@ Y.extend(BulkEditor, Y.Widget,
 	/**
 	 * Clear errors received from the server.  This clears all displayed
 	 * messages.
+	 * 
+	 * @method clearServerErrors
 	 */
 	clearServerErrors: function()
 	{
@@ -1682,6 +1777,7 @@ Y.extend(BulkEditor, Y.Widget,
 	 * error) or an object providing msg and type, where type can be
 	 * 'error', 'warn', 'info', or 'success'.
 	 * 
+	 * @method setServerErrors
 	 * @param page_errors {Array} list of page-level error messages
 	 * @param record_field_errors {Array} list of objects *in record display order*,
 	 *		each of which defines id (String), recordError (message),
@@ -1701,14 +1797,8 @@ Y.extend(BulkEditor, Y.Widget,
 		{
 			page:       page_errors || [],
 			records:    record_field_errors || [],
-			record_map: {}
+			record_map: Y.Array.toObject(record_field_errors || [], 'id')
 		};
-
-		Y.Array.each(this.server_errors.records, function(r)
-		{
-			this.server_errors.record_map[ r.id ] = r;
-		},
-		this);
 
 		this._updatePageStatus();
 
@@ -1727,6 +1817,7 @@ Y.extend(BulkEditor, Y.Widget,
 	/**
 	 * Update paginator to show which pages have errors.
 	 *
+	 * @method _updatePageStatus
 	 * @protected
 	 */
 	_updatePageStatus: function()
@@ -1763,6 +1854,7 @@ Y.extend(BulkEditor, Y.Widget,
 	 * Validate the visible values (if using server-side pagination) or all
 	 * the values (if using client-side pagination or no pagination).
 	 * 
+	 * @method validate
 	 * @return {Boolean} true if all checked values are acceptable
 	 */
 	validate: function()
@@ -1808,9 +1900,10 @@ Y.extend(BulkEditor, Y.Widget,
 	/**
 	 * Validate the visible values.
 	 * 
+	 * @method _validateVisibleFields
+	 * @protected
 	 * @param container {Node} if null, uses contentBox
 	 * @return {Boolean} true if all checked values are acceptable
-	 * @protected
 	 */
 	_validateVisibleFields: function(
 		/* object */ container)
@@ -1866,9 +1959,10 @@ Y.extend(BulkEditor, Y.Widget,
 	/**
 	 * Validate the given elements.
 	 * 
+	 * @method _validateElements
+	 * @protected
 	 * @param nodes {NodeList}
 	 * @return {Boolean} true if all checked values are acceptable
-	 * @protected
 	 */
 	_validateElements: function(
 		/* array */ nodes)
@@ -1956,8 +2050,9 @@ Y.extend(BulkEditor, Y.Widget,
 	 * If the data is stored locally and we paginate, validate all of it
 	 * and mark the pages that have invalid values.
 	 * 
-	 * @return {Boolean} true if all checked values are acceptable
+	 * @method _validateAllPages
 	 * @protected
+	 * @return {Boolean} true if all checked values are acceptable
 	 */
 	_validateAllPages: function()
 	{
@@ -2032,6 +2127,8 @@ Y.extend(BulkEditor, Y.Widget,
 
 	/**
 	 * Clear all displayed messages.
+	 * 
+	 * @method _clearValidationMessages
 	 */
 	_clearValidationMessages: function()
 	{
@@ -2051,6 +2148,7 @@ Y.extend(BulkEditor, Y.Widget,
 	/**
 	 * Display a message for the specified field.
 	 * 
+	 * @method displayFieldMessage
 	 * @param e {Node} field input element
 	 * @param msg {String} message to display
 	 * @param type {String} message type:  error, warn, info, success
@@ -2070,7 +2168,7 @@ Y.extend(BulkEditor, Y.Widget,
 		var bd1     = this.getRecordContainer(e);
 		var changed = this._updateRecordStatus(bd1, type, status_pattern, status_re, status_prefix);
 
-		var bd2 = e.getAncestorByClassName(field_container_class);
+		var bd2 = e.getAncestorByClassName(BulkEditor.field_container_class);
 		if (Y.FormManager.statusTakesPrecedence(this._getElementStatus(bd2, status_re), type))
 		{
 			if (msg)
@@ -2095,6 +2193,7 @@ Y.extend(BulkEditor, Y.Widget,
 	/**
 	 * Display a message for the specified record.
 	 * 
+	 * @method displayRecordMessage
 	 * @param id {String} record id
 	 * @param msg {String} message to display
 	 * @param type {String} message type:  error, warn, info, success
@@ -2134,10 +2233,11 @@ Y.extend(BulkEditor, Y.Widget,
 	},
 
 	/**
+	 * @method _getElementStatus
+	 * @protected
 	 * @param n {Node}
 	 * @param r {RegExp}
 	 * @return {Mixed} status or false
-	 * @protected
 	 */
 	_getElementStatus: function(
 		/* Node */	n,
@@ -2150,6 +2250,7 @@ Y.extend(BulkEditor, Y.Widget,
 	/**
 	 * Update the status of the node, if the new status has higher precedence.
 	 *
+	 * @method _updateRecordStatus
 	 * @param bd {Node}
 	 * @param type {String} new status
 	 * @param p {String} pattern for extracting status
@@ -2179,20 +2280,16 @@ Y.extend(BulkEditor, Y.Widget,
 // Markup
 //
 
-function cleanHTML(s)
+BulkEditor.cleanHTML = function(s)
 {
-	if (!s)
-	{
-		return '';
-	}
+	return (Y.Lang.isValue(s) ? Y.Escape.html(s) : '');
+};
 
-	return s.toString()
-			.replace(/<\/?script>/ig, '')
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;');
-}
-
+/**
+ * @property Y.BulkEditor.error_msg_markup
+ * @type {String}
+ * @static
+ */
 BulkEditor.error_msg_markup = Y.Lang.sub('<div class="{c}"></div>',
 {
 	c: message_container_class
@@ -2247,12 +2344,12 @@ BulkEditor.markup =
 
 		return Y.Lang.sub(input,
 		{
-			cont:  field_container_class + ' ' + field_container_class_prefix,
-			field: field_class_prefix,
+			cont:  BulkEditor.field_container_class + ' ' + BulkEditor.field_container_class_prefix,
+			field: BulkEditor.field_class_prefix,
 			key:   o.key,
 			id:    this.getFieldId(o.record, o.key),
 			label: label,
-			value: cleanHTML(o.value),
+			value: BulkEditor.cleanHTML(o.value),
 			yiv:   (o.field && o.field.validation && o.field.validation.css) || '',
 			msg1:  label ? BulkEditor.error_msg_markup : '',
 			msg2:  label ? '' : BulkEditor.error_msg_markup
@@ -2270,14 +2367,13 @@ BulkEditor.markup =
 
 		var option = '<option value="{value}" {selected}>{text}</option>';
 
-		var options = '';
-		Y.Array.each(o.field.values, function(v)
+		var options = Y.Array.reduce(o.field.values, '', function(s, v)
 		{
-			options += Y.Lang.sub(option,
+			return s + Y.Lang.sub(option,
 			{
 				value:    v.value,
-				text:     cleanHTML(v.text),
-				selected: o.value && o.value.toString() === v.value ? 'selected' : ''
+				text:     BulkEditor.cleanHTML(v.text),
+				selected: o.value && o.value.toString() === v.value ? 'selected="selected"' : ''
 			});
 		});
 
@@ -2285,8 +2381,8 @@ BulkEditor.markup =
 
 		return Y.Lang.sub(select,
 		{
-			cont:  	 field_container_class + ' ' + field_container_class_prefix,
-			field:   field_class_prefix,
+			cont:  	 BulkEditor.field_container_class + ' ' + BulkEditor.field_container_class_prefix,
+			field:   BulkEditor.field_class_prefix,
 			key:     o.key,
 			id:      this.getFieldId(o.record, o.key),
 			label:   label,
@@ -2294,6 +2390,86 @@ BulkEditor.markup =
 			yiv:     (o.field && o.field.validation && o.field.validation.css) || '',
 			msg1:    label ? BulkEditor.error_msg_markup : '',
 			msg2:    label ? '' : BulkEditor.error_msg_markup
+		});
+	},
+
+	checkbox: function(o)
+	{
+		var checkbox =
+			'<div class="{cont}{key}">' +
+				'<input type="checkbox" id="{id}" {value} class="{field}{key}" /> ' +
+				'<label for="{id}">{label}</label>' +
+				'{msg}' +
+			'</div>';
+
+		var label = o.field && o.field.label ? BulkEditor.labelMarkup.call(this, o) : '';
+
+		return Y.Lang.sub(checkbox,
+		{
+			cont:  BulkEditor.field_container_class + ' ' + BulkEditor.field_container_class_prefix,
+			field: BulkEditor.field_class_prefix,
+			key:   o.key,
+			id:    this.getFieldId(o.record, o.key),
+			label: label,
+			value: o.value == o.field.values.on ? 'checked="checked"' : '',
+			msg:   BulkEditor.error_msg_markup
+		});
+	},
+
+	checkboxMultiselect: function(o)
+	{
+		var select =
+			'<div class="{cont}{key}">' +
+				'{label}{msg}' +
+				'<div id="{id}-cbs" class="checkbox-multiselect">{cbs}</div>' +
+				'<select id="{id}" class="{field}{key}" multiple="multiple" style="display:none;">{options}</select>' +
+			'</div>';
+
+		var id        = this.getFieldId(o.record, o.key),
+			has_value = Y.Lang.isArray(o.value);
+
+		var checkbox =
+			'<p class="checkbox-multiselect-checkbox">' +
+				'<input type="checkbox" id="{id}-{value}" value="{value}" {checked} /> ' +
+				'<label for="{id}-{value}">{label}</label>' +
+			'</p>';
+
+		var cbs = Y.Array.reduce(o.field.values, '', function(s, v)
+		{
+			return s + Y.Lang.sub(checkbox,
+			{
+				id:      id,
+				value:   v.value,
+				checked: has_value && Y.Array.indexOf(o.value, v.value) >= 0 ? 'checked="checked"' : '',
+				label:   BulkEditor.cleanHTML(v.text)
+			});
+		});
+
+		var option = '<option value="{value}" {selected}>{text}</option>';
+
+		var options = Y.Array.reduce(o.field.values, '', function(s, v)
+		{
+			return s + Y.Lang.sub(option,
+			{
+				value:    v.value,
+				text:     BulkEditor.cleanHTML(v.text),
+				selected: has_value && Y.Array.indexOf(o.value, v.value) >= 0 ? 'selected="selected"' : ''
+			});
+		});
+
+		var label = o.field && o.field.label ? BulkEditor.labelMarkup.call(this, o) : '';
+
+		return Y.Lang.sub(select,
+		{
+			cont:  	 BulkEditor.field_container_class + ' ' + BulkEditor.field_container_class_prefix,
+			field:   BulkEditor.field_class_prefix,
+			key:     o.key,
+			id:      id,
+			label:   label,
+			cbs:     cbs,
+			options: options,
+			yiv:     (o.field && o.field.validation && o.field.validation.css) || '',
+			msg:     BulkEditor.error_msg_markup
 		});
 	},
 
@@ -2310,12 +2486,12 @@ BulkEditor.markup =
 
 		return Y.Lang.sub(textarea,
 		{
-			cont:   field_container_class + ' ' + field_container_class_prefix,
-			prefix: field_class_prefix,
+			cont:   BulkEditor.field_container_class + ' ' + BulkEditor.field_container_class_prefix,
+			prefix: BulkEditor.field_class_prefix,
 			key:    o.key,
 			id:     this.getFieldId(o.record, o.key),
 			label:  label,
-			value:  cleanHTML(o.value),
+			value:  BulkEditor.cleanHTML(o.value),
 			yiv:    (o.field && o.field.validation && o.field.validation.css) || '',
 			msg1:   label ? BulkEditor.error_msg_markup : '',
 			msg2:   label ? '' : BulkEditor.error_msg_markup
@@ -2341,6 +2517,22 @@ BulkEditor.fieldMarkup = function(key, record)
 		record: record
 	});
 };
+
+function handleCheckboxMultiselect(e)
+{
+	var cb     = e.currentTarget,
+		value  = cb.get('value'),
+		select = cb.ancestor('.checkbox-multiselect').next('select');
+
+	Y.some(Y.Node.getDOMNode(select).options, function(o)
+	{
+		if (o.value == value)
+		{
+			o.selected = cb.get('checked');
+			return true;
+		}
+	});
+}
 
 Y.BulkEditor = BulkEditor;
 /**
@@ -2368,8 +2560,9 @@ HTMLTableBulkEditor.ATTRS =
 	/**
 	 * Configuration for each column: key, label, formatter.
 	 *
-	 * @config columns
+	 * @attribute columns
 	 * @type {Array}
+	 * @required
 	 * @writeonce
 	 */
 	columns:
@@ -2387,7 +2580,7 @@ HTMLTableBulkEditor.ATTRS =
 	 * <p>Attaching events to the container before the table is created does
 	 * not work in all browsers.</p>
 	 *
-	 * @config events
+	 * @attribute events
 	 * @type {Array}
 	 * @writeonce
 	 */
@@ -2398,12 +2591,18 @@ HTMLTableBulkEditor.ATTRS =
 	}
 };
 
-var cell_class = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'cell'),
+var cell_class        = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'cell'),
 	cell_class_prefix = cell_class + '-',
-	odd_class = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'odd'),
-	even_class = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'even'),
-	msg_class = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'record-message'),
-	liner_class = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'liner');
+	odd_class         = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'odd'),
+	even_class        = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'even'),
+	msg_class         = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'record-message'),
+	liner_class       = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'liner'),
+
+	input_class          = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'input'),
+	textarea_class       = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'textarea'),
+	select_class         = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'select'),
+	checkbox_class       = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'checkbox'),
+	cb_multiselect_class = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'checkbox-multiselect');
 
 /**
  * Renders an input element in the cell.
@@ -2415,6 +2614,7 @@ var cell_class = Y.ClassNameManager.getClassName(HTMLTableBulkEditor.NAME, 'cell
 HTMLTableBulkEditor.inputFormatter = function(o)
 {
 	o.cell.set('innerHTML', BulkEditor.markup.input.call(this, o));
+	o.cell.addClass(input_class);
 };
 
 /**
@@ -2427,6 +2627,7 @@ HTMLTableBulkEditor.inputFormatter = function(o)
 HTMLTableBulkEditor.textareaFormatter = function(o)
 {
 	o.cell.set('innerHTML', BulkEditor.markup.textarea.call(this, o));
+	o.cell.addClass(textarea_class);
 };
 
 /**
@@ -2439,6 +2640,33 @@ HTMLTableBulkEditor.textareaFormatter = function(o)
 HTMLTableBulkEditor.selectFormatter = function(o)
 {
 	o.cell.set('innerHTML', BulkEditor.markup.select.call(this, o));
+	o.cell.addClass(select_class);
+};
+
+/**
+ * Renders a checkbox element in the cell.
+ *
+ * @method checkboxFormatter
+ * @static
+ * @param o {Object} cell, key, value, field, column, record
+ */
+HTMLTableBulkEditor.checkboxFormatter = function(o)
+{
+	o.cell.set('innerHTML', BulkEditor.markup.checkbox.call(this, o));
+	o.cell.addClass(checkbox_class);
+};
+
+/**
+ * Renders a set of checkboxes for multiselect in the cell.
+ *
+ * @method checkboxMultiselectFormatter
+ * @static
+ * @param o {Object} cell, key, value, field, column, record
+ */
+HTMLTableBulkEditor.checkboxMultiselectFormatter = function(o)
+{
+	o.cell.set('innerHTML', BulkEditor.markup.checkboxMultiselect.call(this, o));
+	o.cell.addClass(cb_multiselect_class);
 };
 
 /**
@@ -2460,6 +2688,16 @@ HTMLTableBulkEditor.defaults =
 		formatter: HTMLTableBulkEditor.selectFormatter
 	},
 
+	checkbox:
+	{
+		formatter: HTMLTableBulkEditor.checkboxFormatter
+	},
+
+	checkboxMultiselect:
+	{
+		formatter: HTMLTableBulkEditor.checkboxMultiselectFormatter
+	},
+
 	textarea:
 	{
 		formatter: HTMLTableBulkEditor.textareaFormatter
@@ -2479,11 +2717,11 @@ function moveFocus(e)
 	var bd = this.getRecordContainer(e.target);
 	if (bd && e.keyCode == 38)
 	{
-		bd = bd.previousSibling;
+		bd = bd.previous();
 	}
 	else if (bd)
 	{
-		bd = bd.nextSibling;
+		bd = bd.next();
 	}
 
 	var id = bd && this.getRecordId(bd);
@@ -2508,6 +2746,11 @@ function moveFocus(e)
 
 Y.extend(HTMLTableBulkEditor, BulkEditor,
 {
+	bindUI: function()
+	{
+		// attach events after creating the table
+	},
+
 	_renderContainer: function(
 		/* element */	container)
 	{
@@ -2525,9 +2768,9 @@ Y.extend(HTMLTableBulkEditor, BulkEditor,
 
 			var row_markup = '<th class="{cell} {prefix}{key}">{label}</th>';
 
-			Y.Array.each(this.get('columns'), function(column)
+			s = Y.Array.reduce(this.get('columns'), s, function(s, column)
 			{
-				s += Y.Lang.sub(row_markup,
+				return s + Y.Lang.sub(row_markup,
 				{
 					cell:   cell_class,
 					prefix: cell_class_prefix,
@@ -2541,6 +2784,7 @@ Y.extend(HTMLTableBulkEditor, BulkEditor,
 			container.set('innerHTML', s);
 			this.table = container.get('firstChild');
 
+			this._attachEvents(this.table);
 			Y.on('key', moveFocus, this.table, 'down:38,40+ctrl', this);
 
 			Y.Object.each(this.get('events'), function(e)
@@ -2553,7 +2797,7 @@ Y.extend(HTMLTableBulkEditor, BulkEditor,
 		{
 			while (this.table.get('children').size() > 1)
 			{
-				this.table.get('lastChild').remove();
+				this.table.get('lastChild').remove().destroy(true);
 			}
 		}
 	},
@@ -2651,4 +2895,4 @@ Y.extend(HTMLTableBulkEditor, BulkEditor,
 Y.HTMLTableBulkEditor = HTMLTableBulkEditor;
 
 
-}, 'gallery-2011.09.07-20-35' ,{skinnable:true, optional:['datasource','dataschema','gallery-paginator'], requires:['widget','datasource-local','gallery-busyoverlay','gallery-formmgr-css-validation','gallery-node-optimizations','gallery-scrollintoview']});
+}, 'gallery-2012.10.10-19-59' ,{optional:['datasource','dataschema','gallery-paginator'], requires:['widget','datasource-local','gallery-busyoverlay','gallery-formmgr-css-validation','gallery-node-optimizations','gallery-scrollintoview','array-extras','gallery-funcprog','escape','event-key','gallery-nodelist-extras2'], skinnable:true});

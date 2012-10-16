@@ -1,6 +1,5 @@
 /**
  * @module gallery-querybuilder
- * @namespace QueryBuilder
  */
 
 /**********************************************************************
@@ -11,6 +10,11 @@
  * 
  * <p>There must be exactly one operator specified for this plugin.</p>
  * 
+ * <p>The <code>value</code> argument passed to
+ * <code>QueryBuilder.appendNew()</code> must be a string: the value of the
+ * menu item to select.</p>
+ * 
+ * @namespace QueryBuilder
  * @class Select
  */
 

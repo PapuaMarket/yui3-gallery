@@ -2,8 +2,7 @@
  * <p>Extends the IO base class to enable multiple responses using an
  * iframe as the transport medium.</p>
  * 
- * @module io
- * @submodule io-multiresponse
+ * @module gallery-io-multiresponse
  */
 
 /**
@@ -357,7 +356,7 @@ Y.io = function(uri, c) {
         c.form.upload = true;
     }
 
-    orig_io.call(this, uri, c);
+    return orig_io.call(this, uri, c);
 };
 
 Y.mix(Y.io, orig_io);
