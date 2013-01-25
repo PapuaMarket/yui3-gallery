@@ -1,4 +1,4 @@
-YUI.add('gallery-bt-syncscroll', function(Y) {
+YUI.add('gallery-bt-syncscroll', function (Y, NAME) {
 
 /**
  * Provide SyncScroll widget extension to sync status with parent scrollView
@@ -18,7 +18,18 @@ YUI.add('gallery-bt-syncscroll', function(Y) {
 var  WIDTH_CHANGE = 'widthChange',
 
 SyncScroll = function (config) {
-    Y.on('btReady', this._bssInitParentScroll, this);
+    var firstInit = false,
+        that = this;
+    Y.once('btReady', function () {
+        if (firstInit) {
+            that._bssInitParentScroll();
+        } else {
+            that.after('render', function () {
+                that._bssInitParentScroll();
+            });
+        }
+    });
+    firstInit = true;
 };
 
 /**
@@ -115,4 +126,4 @@ SyncScroll.prototype = {
 Y.namespace('Bottle').SyncScroll = SyncScroll;
 
 
-}, '@VERSION@' ,{requires:['gallery-bt-page']});
+}, 'gallery-2012.12.19-21-23', {"requires": ["gallery-bt-page"]});

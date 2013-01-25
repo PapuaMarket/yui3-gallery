@@ -5,8 +5,7 @@
  * @static
  */
 
-var WIDTH_CHANGE = 'widthChange',
-    LABELWIDTH_CHANGE = 'labelWidthChange',
+var LABELWIDTH_CHANGE = 'labelWidthChange',
 
     PREFIX = 'bst_',
 
@@ -168,6 +167,7 @@ SlideTab = Y.Base.create('btslidetab', Y.Widget, [Y.WidgetStdMod, Y.Bottle.SyncS
 
                 if (O && (old !== O)) {
                     O.addClass('on');
+                    Y.Bottle.lazyLoad(O);
                     if (old) {
                         old.removeClass('on');
                     }
@@ -186,6 +186,18 @@ SlideTab = Y.Base.create('btslidetab', Y.Widget, [Y.WidgetStdMod, Y.Bottle.SyncS
          */
         scrollView: {
             writeOnce: true
+        },
+
+        /**
+         * Support lazy load tab contents
+         *
+         * @attribute lazyLoad
+         * @type {Boolean}
+         * @default true
+         */
+        lazyLoad: {
+            value: true,
+            validator: Y.Lang.isBoolean
         },
 
         /**
@@ -277,6 +289,9 @@ SlideTab = Y.Base.create('btslidetab', Y.Widget, [Y.WidgetStdMod, Y.Bottle.SyncS
      * @type Object
      */
     HTML_PARSER: {
+        lazyLoad: function (srcNode) {
+            return (srcNode.getData('lazy-load') === 'false') ? false : true;
+        },
         slideNode: function (srcNode) {
             return srcNode.getData('slide-node') || '> ul';
         },

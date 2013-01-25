@@ -5,8 +5,7 @@
  * @static
  */
 
-var WIDTH_CHANGE = 'widthChange',
-    COLUMN_CHANGE = 'columnWidthChange',
+var COLUMN_CHANGE = 'columnWidthChange',
     RENDER_FINISHED = 'renderFinished',
 
     RENDER_INTERVAL = 100,
@@ -15,7 +14,8 @@ var WIDTH_CHANGE = 'widthChange',
 
     CLASSES = {
         COLUMN: PREFIX + 'column',
-        MODULE: PREFIX + 'module'
+        MODULE: PREFIX + 'module',
+        HIDDEN: PREFIX + 'hidden'
     },
 
     HTMLS = {
@@ -58,7 +58,7 @@ PhotoGrid = Y.Base.create('btphotogrid', Y.Widget, [Y.Bottle.SyncScroll], {
          * @type EventHandle
          * @private
          */
-        this._bpgEventHandlers = this.after(COLUMN_CHANGE, this._updateColumns)
+        this._bpgEventHandlers = this.after(COLUMN_CHANGE, this._updateColumns);
     },
 
     destructor: function () {
@@ -71,6 +71,19 @@ PhotoGrid = Y.Base.create('btphotogrid', Y.Widget, [Y.Bottle.SyncScroll], {
     },
 
     /**
+     * append new html into photogrid. the html will be parsed into photogrid then render
+     *
+     * @method append
+     * @param html {String} new html string
+     */
+    append: function (html) {
+        var N = Y.Node.create(html);
+
+        this.parseImageData((N.getDOMNode().nodeType === 11) ? Y.Node.create('<div>' + html + '</div>') : N, true);
+        this.renderImages(true);
+    },
+
+    /**
      * parse image data from a node
      *
      * @method parseImageData
@@ -79,7 +92,9 @@ PhotoGrid = Y.Base.create('btphotogrid', Y.Widget, [Y.Bottle.SyncScroll], {
      */
     parseImageData: function (node, append) {
         var images = append ? this._bpgImages : [],
+            that = this,
             css = this.get('photoNode'),
+            hid = Y.one('.btHidden') || Y.one('body').appendChild(Y.Node.create('<div class="btHidden"></div>')),
             P = node || this.get('contentBox');
 
         if (!append) {
@@ -99,7 +114,8 @@ PhotoGrid = Y.Base.create('btphotogrid', Y.Widget, [Y.Bottle.SyncScroll], {
                 img: O.getData('img'),
                 width: O.getData('width'),
                 height: O.getData('height'),
-                module: O.addClass(CLASSES.MODULE)
+                module: O.addClass(CLASSES.MODULE),
+                error: false
             },
             P = O.one(css);
 
@@ -121,13 +137,27 @@ PhotoGrid = Y.Base.create('btphotogrid', Y.Widget, [Y.Bottle.SyncScroll], {
                 image.load.once('load', function (E) {
                     var O = E.target;
 
-                    this.height = O.get('height');
-                    this.width = O.get('width');
+                    if (Y.UA.ie) {
+                        image.loadie = new Image();
+                        image.loadie.src = image.icon;
+                        this.height = this.loadie.height;
+                        this.width = this.loadie.width;
+                    } else {
+                        this.height = O.get('height');
+                        this.width = O.get('width');
+                    }
 
-                    this._bpgPending -= 1;
+                    that._bpgPending -= 1;
+                }, image);
+
+                image.load.once('error', function () {
+                    this.error = true;
+                    that._bpgPending -= 1;
                 }, image);
             }
 
+            // Append to document to start image load, only required by IE9+
+            hid.append(O);
             images.push(image);
         }, this);
 
@@ -167,12 +197,20 @@ PhotoGrid = Y.Base.create('btphotogrid', Y.Widget, [Y.Bottle.SyncScroll], {
      * rendering images
      *
      * @method renderImages
+     * @param [start] {Node} node to parse data. If omitted, Widget ContentBox will be used.
      */
-    renderImages: function () {
+    renderImages: function (start) {
         var img,
             delay = RENDER_INTERVAL;
 
+        if (start && this._bpgRendering) {
+            return;
+        }
+
+        this._bpgRendering = true;
+
         if (this._bpgImages.length <= this._bpgRendered) {
+            this._bpgRendering = false;
             this.syncScroll();
             this.fire(RENDER_FINISHED);
             return;
@@ -180,7 +218,10 @@ PhotoGrid = Y.Base.create('btphotogrid', Y.Widget, [Y.Bottle.SyncScroll], {
 
         img = this._bpgImages[this._bpgRendered];
 
-        if (img.width) {
+        if (img.width || img.error) {
+            if (img.error) {
+                img.load.setAttribute('src', this.get('errorImage'));
+            }
             this._minColumn().append(img.module);
             this._bpgRendered += 1;
             delay = 1;
@@ -240,7 +281,7 @@ PhotoGrid = Y.Base.create('btphotogrid', Y.Widget, [Y.Bottle.SyncScroll], {
              * @protected
              */
             this._bpgRendered = 0;
-            this.renderImages();
+            this.renderImages(true);
         }
     }
 }, {
@@ -253,6 +294,18 @@ PhotoGrid = Y.Base.create('btphotogrid', Y.Widget, [Y.Bottle.SyncScroll], {
      * @protected
      */
     ATTRS: {
+        /**
+         * Default error Image.
+         *
+         * @attribute errorImage
+         * @type String
+         * @default 'about:blank'
+         */
+        errorImage: {
+            value: 'http://l.yimg.com/f/i/tw/map/i/cpx.gif',
+            validator: Y.Lang.isString
+        },
+
         /**
          * Default column width. Column number will be decided by Math.round(parentWidth / columnWidth), and then all these columns will be fitted equally.
          *
@@ -318,6 +371,9 @@ PhotoGrid = Y.Base.create('btphotogrid', Y.Widget, [Y.Bottle.SyncScroll], {
      * @type Object
      */
     HTML_PARSER: {
+        errorImage: function (srcNode) {
+            return srcNode.getData('error-image');
+        },
         columnWidth: function (srcNode) {
             return srcNode.getData('column-width');
         },

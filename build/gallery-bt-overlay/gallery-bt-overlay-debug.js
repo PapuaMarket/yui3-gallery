@@ -1,4 +1,4 @@
-YUI.add('gallery-bt-overlay', function(Y) {
+YUI.add('gallery-bt-overlay', function (Y, NAME) {
 
 /*jslint nomen: true*/
 /**
@@ -73,18 +73,7 @@ var body = Y.one('body'),
         },
 
         renderUI: function () {
-            var O = this.get('boundingBox'),
-                W = O.get('offsetWidth'),
-                H = O.get('offsetHeight');
-
-            if (!this.get('height') && H) {
-                this.set('height', H);
-            }
-
-            if (!this.get('width') && W) {
-                this.set('width', W);
-            }
-
+            this.syncWH();
             this._updatePositionHide();
             this._updatePositionShow();
         },
@@ -135,7 +124,7 @@ var body = Y.one('body'),
                 pos = move ? this.getShowHideXY(true) : 0;
 
             if (move) {
-                this.move(pos[0], pos[1]);
+                this.absMove(pos[0], pos[1]);
             }
         },
 
@@ -150,7 +139,7 @@ var body = Y.one('body'),
                 pos = vis ? 0 : this.getShowHideXY(false);
 
             if (!vis) {
-                this.move(pos[0], pos[1]);
+                this.absMove(pos[0], pos[1]);
             }
         },
 
@@ -223,8 +212,8 @@ var body = Y.one('body'),
 
             return [
                 selfDir * W * posData[0] + Math.floor((W - this.get('width')) / 2),
-                selfDir * H * posData[1] + Math.floor((H - this.get('height')) / 2) + scrollBase.get('scrollTop')
-            ]; 
+                selfDir * H * posData[1] + Math.floor((H - this.get('height')) / 2) + (Y.Bottle.get('positionFixed') ? 0 : scrollBase.get('scrollTop'))
+            ];
         },
 
         /**
@@ -234,8 +223,8 @@ var body = Y.one('body'),
          * @protected
          */
         _doShowHide: function (E) {
-            var show = E.newVal;
-                runthese = show && this.enable() && this._updateFullSize(),
+            var show = E.newVal,
+                runthese = (show && this.enable() && this._updateFullSize()),
                 finalPos = this.getShowHideXY(show),
                 node = this.get('boundingBox');
 
@@ -401,4 +390,4 @@ Mask.on('gesturemovestart', function (E) {
 });
 
 
-}, '@VERSION@' ,{requires:['widget-position', 'widget-stack', 'gallery-bt-pushpop']});
+}, 'gallery-2012.12.19-21-23', {"requires": ["widget-position", "widget-stack", "gallery-bt-pushpop"]});

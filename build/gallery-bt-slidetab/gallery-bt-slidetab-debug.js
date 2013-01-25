@@ -1,4 +1,4 @@
-YUI.add('gallery-bt-slidetab', function(Y) {
+YUI.add('gallery-bt-slidetab', function (Y, NAME) {
 
 /**
  * Provide SlideTab class which can help you to pick a tab to view with a slider.
@@ -7,8 +7,7 @@ YUI.add('gallery-bt-slidetab', function(Y) {
  * @static
  */
 
-var WIDTH_CHANGE = 'widthChange',
-    LABELWIDTH_CHANGE = 'labelWidthChange',
+var LABELWIDTH_CHANGE = 'labelWidthChange',
 
     PREFIX = 'bst_',
 
@@ -170,6 +169,7 @@ SlideTab = Y.Base.create('btslidetab', Y.Widget, [Y.WidgetStdMod, Y.Bottle.SyncS
 
                 if (O && (old !== O)) {
                     O.addClass('on');
+                    Y.Bottle.lazyLoad(O);
                     if (old) {
                         old.removeClass('on');
                     }
@@ -188,6 +188,18 @@ SlideTab = Y.Base.create('btslidetab', Y.Widget, [Y.WidgetStdMod, Y.Bottle.SyncS
          */
         scrollView: {
             writeOnce: true
+        },
+
+        /**
+         * Support lazy load tab contents
+         *
+         * @attribute lazyLoad
+         * @type {Boolean}
+         * @default true
+         */
+        lazyLoad: {
+            value: true,
+            validator: Y.Lang.isBoolean
         },
 
         /**
@@ -279,6 +291,9 @@ SlideTab = Y.Base.create('btslidetab', Y.Widget, [Y.WidgetStdMod, Y.Bottle.SyncS
      * @type Object
      */
     HTML_PARSER: {
+        lazyLoad: function (srcNode) {
+            return (srcNode.getData('lazy-load') === 'false') ? false : true;
+        },
         slideNode: function (srcNode) {
             return srcNode.getData('slide-node') || '> ul';
         },
@@ -303,4 +318,11 @@ SlideTab = Y.Base.create('btslidetab', Y.Widget, [Y.WidgetStdMod, Y.Bottle.SyncS
 Y.namespace('Bottle').SlideTab = SlideTab;
 
 
-}, '@VERSION@' ,{requires:['gallery-bt-syncscroll', 'widget-stdmod', 'gallery-zui-rascroll', 'gallery-zui-scrollsnapper']});
+}, 'gallery-2012.12.19-21-23', {
+    "requires": [
+        "gallery-bt-syncscroll",
+        "widget-stdmod",
+        "gallery-zui-rascroll",
+        "gallery-zui-scrollsnapper"
+    ]
+});

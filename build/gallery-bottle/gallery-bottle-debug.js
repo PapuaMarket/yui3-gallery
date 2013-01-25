@@ -1,4 +1,4 @@
-YUI.add('gallery-bottle', function(Y) {
+YUI.add('gallery-bottle', function (Y, NAME) {
 
 /**
  * The bottle module collects all UI components, and provides initialize functions.
@@ -16,13 +16,17 @@ YUI.add('gallery-bottle', function(Y) {
 var BOTTLE_INIT = 'btInit',
     BOTTLE_READY = 'btReady',
     BOTTLE_NATIVE = 'btNative',
+    BOTTLE_FIXED = 'btFixed',
+    BOTTLE_FOCUS = 'btFocus',
+
+    MATCH_HTML_COMMENT = /^<!--([\s\S]+)-->$/,
+
     SYNC_SCREEN = 'btSyncScreen',
     htmlbody = Y.all('html, body'),
     body = Y.one('body'),
     btRoot = Y.one('.btRoot') || body.appendChild(Y.Node.create('<div class="btRoot"></div>')),
     inited = body.hasClass(BOTTLE_INIT),
     hideURL = false,
-    nativeScroll = true,
     styles = {
         hidden: {overflow: 'hidden'},
         scroll: {
@@ -30,13 +34,17 @@ var BOTTLE_INIT = 'btInit',
             overflowX: 'hidden'
         }
     },
+    flags = {
+        nativeScroll: true,
+        positionFixed: false
+    },
 
     resetBodySize = function (resize) {
         if (hideURL && !resize) {
             window.scrollTo(0, 1);
         }
 
-        if (nativeScroll) {
+        if (flags.nativeScroll) {
             return;
         }
 
@@ -46,9 +54,30 @@ var BOTTLE_INIT = 'btInit',
         });
     },
 
-    initWidgets = function(css, cls) {
-        Y.all(css).each(function (srcNode) {
-            var unused = new cls({
+    handleResize = function (force) {
+        var scCurrent = Y.Bottle.ShortCut.getCurrent(),
+            overlayCurrent = Y.Bottle.Overlay.getCurrent(),
+            page = Y.Bottle.Page.getCurrent();
+
+        if (page) {
+            resetBodySize(true);
+            page.resize();
+        } else {
+            Y.fire(SYNC_SCREEN);
+        }
+
+        if (scCurrent) {
+            scCurrent.scResize(force === true);
+        }
+
+        if (overlayCurrent) {
+            overlayCurrent.olResize(force === true);
+        }
+    },
+
+    initWidgets = function(css, Cls, Root) {
+        Root.all(css).each(function (srcNode) {
+            new Cls({
                 srcNode: srcNode,
                 render: true
             });
@@ -59,38 +88,46 @@ var BOTTLE_INIT = 'btInit',
      * Initialize bottle UI library , create instances with supported data-roles.
      *
      * @method init
-     * @param hideURL {Boolean} auto hide URL Bar when bottle inited or orientation changed
+     * @param hideURL {Boolean|Node} auto hide URL Bar when bottle inited or orientation changed. If a Node is provided, try to initialize Bottle widgets for this Node.
      */
-    init = function (hide) {
+    init = function (initCfg) {
         var pageNode = Y.one('[data-role=page]'),
+            initNode = Y.instanceOf(initCfg, Y.Node),
+            initRoot = initNode ? initCfg : body,
             pageWidget;
 
-        hideURL = hide;
+        hideURL = (initCfg === true);
 
-        if (inited) {
+        if (inited && !initNode) {
             return;
         }
 
-        if (pageNode) {
-            htmlbody.setStyles(styles.hidden);
+        if (!initNode) {
+            if (pageNode) {
+                htmlbody.setStyles(styles.hidden);
+            }
+
+            body.addClass(BOTTLE_INIT);
+            inited = true;
         }
 
-        body.addClass(BOTTLE_INIT);
-        inited = true;
+        initWidgets('[data-role=viewer]', Y.Bottle.Viewer, initRoot);
+        initWidgets('[data-role=photogrid]', Y.Bottle.PhotoGrid, initRoot);
+        initWidgets('[data-role=carousel]', Y.Bottle.Carousel, initRoot);
+        initWidgets('[data-role=slidetab]', Y.Bottle.SlideTab, initRoot);
+        initWidgets('[data-role=loader]', Y.Bottle.Loader, initRoot);
 
-
-        initWidgets('[data-role=photogrid]', Y.Bottle.PhotoGrid);
-        initWidgets('[data-role=carousel]', Y.Bottle.Carousel);
-        initWidgets('[data-role=slidetab]', Y.Bottle.SlideTab);
-        initWidgets('[data-role=loader]', Y.Bottle.Loader);
-
-        if (pageNode) {
+        if (pageNode && !initNode) {
             resetBodySize();
 
             pageWidget = new Y.Bottle.Page({srcNode: pageNode, render: true});
             pageWidget.resize();
 
             if (pageWidget.get('nativeScroll')) {
+                if (Y.Bottle.Device.getPositionFixedSupport()) {
+                    flags.positionFixed = true;
+                    body.addClass(BOTTLE_FIXED);
+                }
                 htmlbody.setStyles(styles.scroll);
                 body.addClass(BOTTLE_NATIVE);
                 pageWidget.item(0).get('scrollView').disable();
@@ -103,13 +140,13 @@ var BOTTLE_INIT = 'btInit',
                     E.preventDefault();
                 }, {standAlone:true, root: btRoot});
             } else {
-                nativeScroll = false;
+                flags.nativeScroll = false;
                 resetBodySize();
             }
         }
 
-        Y.all('[data-role=shortcut]').each(function (shortcutNode) {
-            var unused = new Y.Bottle.ShortCut({
+        initRoot.all('[data-role=shortcut]').each(function (shortcutNode) {
+            new Y.Bottle.ShortCut({
                 srcNode: shortcutNode,
                 visible: false,
                 disabled: true,
@@ -117,8 +154,8 @@ var BOTTLE_INIT = 'btInit',
             });
         });
 
-        Y.all('[data-role=overlay]').each(function (overlayNode) {
-            var unused = new Y.Bottle.Overlay({
+        initRoot.all('[data-role=overlay]').each(function (overlayNode) {
+            new Y.Bottle.Overlay({
                 srcNode: overlayNode,
                 visible: false,
                 disabled: true,
@@ -126,33 +163,65 @@ var BOTTLE_INIT = 'btInit',
             });
         });
 
-        window.addEventListener((Y.UA.mobile == 'Apple') ? 'orientationchange' : 'resize', function () {
-            var scCurrent = Y.Bottle.ShortCut.getCurrent(),
-                overlayCurrent = Y.Bottle.Overlay.getCurrent(),
-                page = Y.Bottle.Page.getCurrent();
+        if (initNode) {
+            return;
+        }
 
-            if (page) {
-                resetBodySize(true);
-                page.resize();
-            } else {
-                Y.fire(SYNC_SCREEN);
-            }
+        Y.on((Y.UA.mobile === 'Apple') ? 'orientationchange' : 'resize', handleResize, window);
 
-            if (scCurrent) {
-                scCurrent.scResize();
-            }
+        body.delegate('focus', function () {
+            body.addClass(BOTTLE_FOCUS);
+        }, 'input, select, textarea');
 
-            if (overlayCurrent) {
-                overlayCurrent.olResize();
-            }
-        }, false);
 
-        body.addClass(BOTTLE_READY);
+        body.delegate('blur', function () {
+            body.removeClass(BOTTLE_FOCUS);
+            handleResize(true);
+        }, 'input, select, textarea');
+
+        body.addClass(BOTTLE_READY).removeClass('btHideSCO').removeClass('btInPlace').removeClass('btHideAll');
         Y.publish(BOTTLE_READY, {fireOnce: true});
         Y.fire(BOTTLE_READY);
+    },
+
+    /**
+     * check the node content, if the content is wrapped with <!-- --> , then unwrap it then init() it.
+     *
+     * @method lazyLoad
+     * @param node {Node} do lazy load on this Node
+     */
+    lazyLoad = function (O) {
+        var H = O.getHTML();
+        if (H.match(MATCH_HTML_COMMENT)) {
+            O.setHTML(H.replace(MATCH_HTML_COMMENT, '$1'));
+            Y.Bottle.init(O);
+        }
+    },
+
+    /**
+     * get a flag value
+     *
+     * @method get
+     * @param name {String} the flag name
+     */
+    get = function (A) {
+        return flags[A];
     };
 
 Y.namespace('Bottle').init = init;
+Y.namespace('Bottle').get = get;
+Y.namespace('Bottle').lazyLoad = lazyLoad;
 
 
-}, 'gallery-2012.10.03-20-02' ,{skinnable:true, requires:['gallery-bt-shortcut', 'gallery-bt-overlay', 'gallery-bt-photogrid', 'gallery-bt-slidetab', 'gallery-bt-carousel', 'gallery-bt-loader']});
+}, 'gallery-2012.12.19-21-23', {
+    "skinnable": "true",
+    "requires": [
+        "gallery-bt-shortcut",
+        "gallery-bt-overlay",
+        "gallery-bt-photogrid",
+        "gallery-bt-slidetab",
+        "gallery-bt-carousel",
+        "gallery-bt-loader",
+        "gallery-bt-viewer"
+    ]
+});

@@ -1,6 +1,6 @@
 /**
  * This module provides Container Widget which can handle scrollView with/without header/footer.
- * 
+ *
  * @module gallery-bt-container
  */
 var HEIGHT_CHANGE = 'heightChange',
@@ -16,11 +16,13 @@ var HEIGHT_CHANGE = 'heightChange',
             node = this.get(header ? 'headerNode' : 'footerNode');
 
             if (node) {
+                if (ns && pfix) {
+                    node.addClass('btFixed');
+                }
+
                 node.setStyles({
-                    position: (ns && pfix) ? 'fixed' : '',
                     top: (header && ns && pfix) ? 0 : '',
-                    bottom: (!header && ns && pfix) ? 0 : '',
-                    zIndex: (ns && pfix) ? 50 : ''
+                    bottom: (!header && ns && pfix) ? 0 : ''
                 });
 
                 if (fixedPos) {
@@ -46,7 +48,7 @@ var HEIGHT_CHANGE = 'heightChange',
  * @constructor
  */
 Y.namespace('Bottle').Container = Y.Base.create('btcontainer', Y.Widget, [Y.WidgetChild, Y.zui.Attribute], {
-    initializer: function (config) {
+    initializer: function () {
         /**
          * internal eventhandlers, keep for destructor
          *
@@ -118,7 +120,10 @@ Y.namespace('Bottle').Container = Y.Base.create('btcontainer', Y.Widget, [Y.Widg
      * @protected
      */
     _syncScrollHeight: function () {
-        var height = this.get('height'),
+        var nativeScroll = this.get('nativeScroll'),
+            height = nativeScroll ? Y.Bottle.Device.getBrowserHeight() : this.get('height'),
+            footer,
+            P,
             scroll = this.get('scrollView');
 
         if (!scroll || !height) {
@@ -126,12 +131,21 @@ Y.namespace('Bottle').Container = Y.Base.create('btcontainer', Y.Widget, [Y.Widg
         }
 
         Y.later(1, this, function () {
-            height -= scroll.get('boundingBox').get('offsetTop');
+            footer = this.get('footerNode');
 
             if (this.get('footerFixed')) {
-                height -= this.get('footerNode').get('clientHeight');
+                height -= footer.get('clientHeight');
+            } else {
+                if (footer && this.get('fullHeight')) {
+                    P = footer.previous();
+                    P.setStyle('minHeight', (height - P.getY() - footer.get('clientHeight')) + 'px');
+                }
             }
-            scroll.set('height', height);
+
+            if (!nativeScroll) {
+                height -= scroll.get('boundingBox').get('offsetTop');
+                scroll.set('height', height);
+            }
         });
     }
 }, {
@@ -159,6 +173,7 @@ Y.namespace('Bottle').Container = Y.Base.create('btcontainer', Y.Widget, [Y.Widg
 
                 if (sv) {
                     sv.set('disabled', V);
+                    sv.get('boundingBox').addClass('btFixedScroll');
                     if (V) {
                         sv.unplug(Y.zui.RAScroll);
                     } else {
@@ -177,10 +192,10 @@ Y.namespace('Bottle').Container = Y.Base.create('btcontainer', Y.Widget, [Y.Widg
 
         /**
          * header node of the container
-         * 
+         *
          * @attribute headerNode
          * @type Node
-         * @writeOnce 
+         * @writeOnce
          * @default undefined
          */
         headerNode: {
@@ -189,7 +204,7 @@ Y.namespace('Bottle').Container = Y.Base.create('btcontainer', Y.Widget, [Y.Widg
             setter: function (node) {
                 var N = Y.one(node);
                 if (N) {
-                    N.addClass('bt-header');
+                    N.addClass('btHeader');
                     this.set('headerFixed', N.getData('position') === 'fixed');
                     return N;
                 }
@@ -201,7 +216,7 @@ Y.namespace('Bottle').Container = Y.Base.create('btcontainer', Y.Widget, [Y.Widg
          *
          * @attribute footerNode
          * @type Node
-         * @writeOnce 
+         * @writeOnce
          * @default undefined
          */
         footerNode: {
@@ -210,7 +225,7 @@ Y.namespace('Bottle').Container = Y.Base.create('btcontainer', Y.Widget, [Y.Widg
             setter: function (node) {
                 var N = Y.one(node);
                 if (N) {
-                    N.addClass('bt-footer');
+                    N.addClass('btFooter');
                     this.set('footerFixed', N.getData('position') === 'fixed');
                     return N;
                 }
@@ -222,7 +237,7 @@ Y.namespace('Bottle').Container = Y.Base.create('btcontainer', Y.Widget, [Y.Widg
          *
          * @attribute bodyNode
          * @type Node
-         * @writeOnce 
+         * @writeOnce
          * @default undefined
          */
         bodyNode: {
@@ -246,7 +261,7 @@ Y.namespace('Bottle').Container = Y.Base.create('btcontainer', Y.Widget, [Y.Widg
          *
          * @attribute scrollView
          * @type ScrollView
-         * @writeOnce 
+         * @writeOnce
          * @default undefined
          */
         scrollView: {
@@ -258,7 +273,7 @@ Y.namespace('Bottle').Container = Y.Base.create('btcontainer', Y.Widget, [Y.Widg
          *
          * @attribute cfgScroll
          * @type Object
-         * @writeOnce 
+         * @writeOnce
          * @default {flick: {minDistance: 10, minVelocity: 0.3}}
          */
         cfgScroll: {
@@ -272,6 +287,18 @@ Y.namespace('Bottle').Container = Y.Base.create('btcontainer', Y.Widget, [Y.Widg
             lazyAdd: false
         },
 
+        /**
+         * Boolean indicating if the content size will scale to make the footer can fit to Container buttom.
+         *
+         * @attribute fullHeight
+         * @type Boolean
+         * @default true
+         */
+        fullHeight: {
+            value: true,
+            validator: Y.Lang.isBoolean
+        },
+           
         /**
          * Boolean indicating if hardware acceleration in scrollview
          * animation is disabled.
@@ -342,11 +369,15 @@ Y.namespace('Bottle').Container = Y.Base.create('btcontainer', Y.Widget, [Y.Widg
             }
         },
 
-        translate3D: function (srcNode) {
-            if (srcNode.getData('translate3d') === 'false') {
+        fullHeight: function (srcNode) {
+            if (srcNode.getData('full-height') === 'false') {
                 return false;
             }
             return true;
+        },
+
+        translate3D: function (srcNode) {
+            return (srcNode.getData('translate3d') === 'false') ? false : true;
         }
     }
 });

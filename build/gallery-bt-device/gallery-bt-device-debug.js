@@ -1,4 +1,4 @@
-YUI.add('gallery-bt-device', function(Y) {
+YUI.add('gallery-bt-device', function (Y, NAME) {
 
 /*global screen */
 /**
@@ -56,7 +56,9 @@ var positionFixedSupport = null,
      * @method getTouchSupport
      * @return {Boolean}
      */
-    getTouchSupport: function () { return ((Y.config.win && ('ontouchstart' in Y.config.win)) && !(Y.UA.chrome && Y.UA.chrome < 6))},
+    getTouchSupport: function () {
+        return ((Y.config.win && ('ontouchstart' in Y.config.win)) && !(Y.UA.chrome && Y.UA.chrome < 6));
+    },
 
     /**
      * get current Device touch support status
@@ -75,7 +77,7 @@ var positionFixedSupport = null,
         py = positionFixedParent.one('div').set('scrollTop', '30px').one('span').getY();
         positionFixedParent.remove();
 
-        return positionFixedSupport = (py === 1);
+        return (positionFixedSupport = (py === 1));
     },
 
     /**
@@ -103,7 +105,7 @@ var positionFixedSupport = null,
      * @return {Number} an integer
      */
     getBrowserWidth: function () {
-        return window.innerWidth;
+        return window.innerWidth || document.documentElement.clientWidth;
     },
 
     /**
@@ -113,7 +115,7 @@ var positionFixedSupport = null,
      * @return {Number} an integer
      */
     getBrowserHeight: function () {
-        return window.innerHeight;
+        return window.innerHeight || document.documentElement.clientHeight;
     }
 };
 
@@ -156,4 +158,4 @@ if (Y.UA.iphone) {
 Y.namespace('Bottle').Device = Device;
 
 
-}, '@VERSION@' ,{requires:['node-screen']});
+}, 'gallery-2012.12.19-21-23', {"requires": ["node-screen"]});

@@ -91,18 +91,7 @@ var body = Y.one('body'),
         },
 
         renderUI: function () {
-            var O = this.get('boundingBox'),
-                P = this.get('contentBox'),
-                W = O.get('offsetWidth') || P.get('offsetWidth'),
-                H = O.get('offsetHeight') || P.get('offsetHeight');
-
-            if (!this.get('height') && H) {
-                this.set('height', H);
-            }
-
-            if (!this.get('width') && W) {
-                this.set('width', W);
-            }
+            this.syncWH();
         },
 
         /**
@@ -112,21 +101,20 @@ var body = Y.one('body'),
          * @param [force=false] {Boolean} <b>true</b> to forece resize even when ShortCut is not visibile.
          */
         scResize: function (force) {
+            var sz = false;
             //reduce syncUI times
-            if (!force && (this.get('width') === Y.Bottle.Device.getBrowserWidth())) {
-                return;
-            }
-
-            if (!force && (this.get('height') === Y.Bottle.Device.getBrowserHeight())) {
-                return;
-            }
-
             if (!this.get('visible') && !force) {
                 return;
             }
 
-            this._updateFullSize();
-            this._updatePositionShow();
+            if (force || (this.get('width') !== Y.Bottle.Device.getBrowserWidth()) || (this.get('height') === Y.Bottle.Device.getBrowserHeight())) {
+                this._updateFullSize();
+                sz = true;
+            }
+
+            if (force || sz || this.get('showFrom').match(/right|bottom/)) {
+                this._updatePositionShow();
+            }
         },
 
         /**
@@ -156,8 +144,8 @@ var body = Y.one('body'),
                 posData = POSITIONS[this.get('showFrom')];
 
             return [
-                Math.floor(posData[2] * Y.Bottle.Device.getBrowserWidth() + (selfDir * posData[0] - posData[2]) * this.get('width')), 
-                Math.floor(posData[3] * Y.Bottle.Device.getBrowserHeight() + (selfDir * posData[1] - posData[3]) * this.get('height')) + scrollBase.get('scrollTop')
+                Math.floor(posData[2] * Y.Bottle.Device.getBrowserWidth() + (selfDir * posData[0] - posData[2]) * this.get('width')),
+                Math.floor(posData[3] * Y.Bottle.Device.getBrowserHeight() + (selfDir * posData[1] - posData[3]) * this.get('height')) + (Y.Bottle.get('positionFixed') ? 0 : scrollBase.get('scrollTop'))
             ];
         },
 
@@ -188,7 +176,7 @@ var body = Y.one('body'),
             });
 
             XY = this.getShowHidePosition(true);
-            this.move(XY[0], XY[1]);
+            this.absMove(XY[0], XY[1]);
         },
 
         /**
@@ -202,7 +190,7 @@ var body = Y.one('body'),
                 vis = (E && (E.visible !== undefined)) ? E.visible : this.get('visible'),
                 XY = this.getShowHidePosition(vis || isUnveil);
 
-            this.move(XY[0], XY[1]);
+            this.absMove(XY[0], XY[1]);
         },
 
         /**
@@ -256,7 +244,7 @@ var body = Y.one('body'),
             }
 
             next = this;
-            E.halt(); 
+            E.halt();
             current.hide();
         },
 
@@ -382,7 +370,7 @@ var body = Y.one('body'),
                 },
                 setter: function (V) {
                     var F,
-                        B = this.get('contentBox'), 
+                        B = this.get('contentBox'),
                         fwh = POSITIONS[V][0];
 
                     if (V === this.get('showFrom')) {

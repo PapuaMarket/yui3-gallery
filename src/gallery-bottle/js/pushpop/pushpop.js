@@ -10,6 +10,7 @@ var RENDERUI = 'renderUI',
 
     HEIGHT_CHANGE = 'heightChange',
     WIDTH_CHANGE = 'widthChange',
+    VISIBLE_CHANGE = 'visibleChange',
 
     ADDCHILD = 'addChild',
 
@@ -44,7 +45,7 @@ var RENDERUI = 'renderUI',
  * @namespace Bottle
  * @param [config] {Object} User configuration object
  */
-PushPop = function (config) {
+PushPop = function () {
     /**
      * internal eventhandlers, keep for destructor
      *
@@ -156,7 +157,7 @@ PushPop.ATTRS = {
      * @attribute pushFrom
      * @type String
      * @default 'right'
-     */ 
+     */
     pushFrom: {
         value: 'right',
         lazyAdd: false,
@@ -204,13 +205,35 @@ PushPop.HTML_PARSER = {
 
 PushPop.prototype = {
     initializer: function () {
-        var srcNode = this.get('srcNode'),
-            query = this.get('childQuery'),
+        var once;
+
+        if (this.get('visible')) {
+            this._addAllChildren();
+        } else {
+            once = this.after(VISIBLE_CHANGE, function (E) {
+                if (E.newVal) {
+                    once.detach();
+                    this._addAllChildren();
+                }
+            });
+        }
+    },
+
+    /**
+     * query and get all children then add into this widget
+     *
+     * @method _addAllChildren
+     * @protected
+     */
+    _addAllChildren: function () {
+        var query = this.get('childQuery'),
             cfg = this.get('cfgChild');
 
-        if (!query) {
+        if (!query || this._bppAllAdded) {
             return;
         }
+
+        this._bppAllAdded = true;
 
         this.get('contentBox').all(query).each(function (O) {
             this.add(Y.merge(cfg, {srcNode: O}));
@@ -222,7 +245,7 @@ PushPop.prototype = {
      *
      * @method _destroyPushPop
      * @private
-     */    
+     */
     _destroyPushPop: function () {
         this._bppEventHandlers.detach();
         delete this._bppEventHandlers;
@@ -235,7 +258,7 @@ PushPop.prototype = {
      * @param [direction] {String} should be one of 'right', 'left', 'top', 'bottom', 'tr', 'br', 'tl', 'bl'. If omitted, current 'pushFrom' attribute will be used
      * @param [transition] {Object} transition config. If omitted, current 'ppTrans' attribute will be used
      * @protected
-     */    
+     */
     _updateTransitions: function (direction, transition) {
         var D = direction || this.get('pushFrom'),
             trans = transition || this.get('ppTrans'),
@@ -263,10 +286,10 @@ PushPop.prototype = {
      * @method _syncOneSize
      * @param sideName {String} should be 'width' or 'height'
      * @protected
-     */    
+     */
     _syncOneSide: function (HW) {
         var hw = this.get(HW);
-        this.each(function (O) {
+        this.each(function () {
             this.set(HW, hw);
         });
         this._updateTransitions();
@@ -277,7 +300,7 @@ PushPop.prototype = {
      *
      * @method _afterPPHeightChange
      * @protected
-     */    
+     */
     _afterPPHeightChange: function () {
         this._syncOneSide('height');
     },
@@ -287,7 +310,7 @@ PushPop.prototype = {
      *
      * @method _afterPPWidthChange
      * @protected
-     */    
+     */
     _afterPPWidthChange: function () {
         this._syncOneSide('width');
     },
@@ -297,7 +320,7 @@ PushPop.prototype = {
      *
      * @method _beforePPAddChild
      * @protected
-     */    
+     */
     _beforePPAddChild: function (E) {
         if (!Y.instanceOf(E.child, this.get('defaultChildType'))) {
             E.halt();
@@ -319,9 +342,29 @@ PushPop.prototype = {
      *
      * @method _renderUIPushPop
      * @protected
-     */    
+     */
     _renderUIPushPop: function () {
         this.get('boundingBox').addClass(Y.Widget.getClassName(PUSHPOP));
+    },
+
+    /**
+     * sync width and height from DOM to widget object
+     *
+     * @method syncWH
+     */
+    syncWH: function () {
+        var O = this.get('boundingBox'),
+            P = this.get('contentBox'),
+            W = O.get('offsetWidth') || P.get('offsetWidth'),
+            H = O.get('offsetHeight') || P.get('offsetHeight');
+
+        if (!this.get('height') && H) {
+            this.set('height', H);
+        }
+
+        if (!this.get('width') && W) {
+            this.set('width', W);
+        }
     },
 
     /**
@@ -338,12 +381,29 @@ PushPop.prototype = {
     },
 
     /**
+     * move the widget by setting css top and left only
+     *
+     * @method absMove
+     * @param x {Number} x position
+     * @param y {Number} y position
+     * @chainable
+     */
+    absMove: function (x, y) {
+        this.get('boundingBox').setStyles({
+            top: y + 'px',
+            left: x + 'px'
+        });
+        return this;
+    },
+
+    /**
      * get top (last) item
      *
      * @method topItem
      * @return {WidgetChild} the top widget child
      */
     topItem: function () {
+        this._addAllChildren();
         return this.item(this.size() - 1);
     },
 
@@ -360,7 +420,7 @@ PushPop.prototype = {
     },
 
     /**
-     * sync a widget width and height with self
+     * get child by widget or index
      *
      * @method getChild
      * @param widget {Widget | Integer} the child widget or index of child
@@ -418,7 +478,7 @@ PushPop.prototype = {
         var index = this.size() - 1,
             underlay = this.get('underlay');
 
-        if (underlay == 'with') {
+        if (underlay === 'with') {
             this.moveChild(index, this._UNDERLAY_TRANS);
         }
 
@@ -454,7 +514,7 @@ PushPop.prototype = {
 
         if (underlay !== 'none') {
             this.moveChild(index - 1, this._UNDERLAY_TRANS, true);
-            if ((underlay == 'with') && index) {
+            if ((underlay === 'with') && index) {
                 this.moveChild(index - 1, this._DONE_TRANS);
             }
         }
